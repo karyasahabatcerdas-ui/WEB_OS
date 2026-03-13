@@ -264,7 +264,7 @@
 
         
         function initMonacoInWin(winId, fileId, fileName) {
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com' } });
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
             require(['vs/editor/editor.main'], async function() {
                 try {
                     const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
