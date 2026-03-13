@@ -59,6 +59,7 @@
     <div id="ctx-item" class="ctx-menu">
         <div onclick="renameItem()">Rename</div>
         <div onclick="deleteItem()" style="color:red">Delete</div>
+        <div onclick="parent.openEditor(selectedId, selectedName)"><i class="fas fa-code"></i> Edit Code</div>
     </div>
 
     <div id="ctx-empty" class="ctx-menu">
@@ -68,23 +69,30 @@
         <div onclick="loadData()">Refresh</div>
     </div>
 
-    <div class="toolbar">
-        <!-- Tombol Back yang Pro (panggil lastParentId) -->
-        <button class="nav-btn" onclick="loadData(lastParentId)" title="Back">
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        
-        <!-- Tombol Refresh -->
-        <button class="nav-btn" onclick="loadData()" title="Refresh">
-            <i class="fas fa-sync"></i>
-        </button>
-
-        <!-- Address Bar / Search -->
-        <input type="text" id="path-input" placeholder="Search files..." onkeyup="filterList()">
-
-        <!-- Status Loading -->
-        <div id="status" style="font-size: 10px; color: #888; margin-left: 10px; min-width: 50px;">Ready</div>
+<div class="toolbar" style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fdfdfd; border-bottom: 1px solid #eee;">
+    
+    <!-- Baris 1: Tombol Navigasi & Global Search -->
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <div class="nav-group" style="display: flex; gap: 5px;">
+            <button class="nav-btn" onclick="loadData(lastParentId)" title="Back"><i class="fas fa-arrow-left"></i></button>
+            <button class="nav-btn" onclick="loadData()" title="Refresh"><i class="fas fa-sync"></i></button>
+        </div>
+        <!-- Search Input khusus untuk filter file di folder ini -->
+        <div style="flex: 1; position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 10px; top: 8px; color: #888; font-size: 12px;"></i>
+            <input type="text" id="filter-input" placeholder="Cari file dalam folder ini..." onkeyup="filterList()" 
+                   style="width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 12px; outline: none; box-sizing: border-box;">
+        </div>
     </div>
+
+    <!-- Baris 2: Address Bar (Path View Only) -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 10px; font-weight: bold; color: #999;">PATH:</span>
+        <input type="text" id="path-input" readonly 
+               style="flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace;">
+    </div>
+</div>
+
 
 
 
@@ -478,21 +486,40 @@
             }
         }
 
-        function filterFiles() {
-            const val = document.getElementById('path-input').value.split('/').pop().toLowerCase();
-            document.querySelectorAll('.file-row').forEach(row => {
-                const name = row.children[0].innerText.toLowerCase();
+        function filterList() {
+            // Ambil input dari filter-input yang baru
+            const val = document.getElementById('filter-input').value.toLowerCase();
+            const rows = document.querySelectorAll('.file-row');
+            
+            rows.forEach(row => {
+                // Ambil nama file dari kolom pertama di Details View
+                const name = row.querySelector('div:first-child').innerText.toLowerCase();
                 row.style.display = name.includes(val) ? 'grid' : 'none';
             });
         }
 
+
         // Context Menu & Global Listeners
         function showCtx(e, id, name) {
             e.preventDefault(); e.stopPropagation();
+            selectedId = id; selectedName = name;
+            closeMenus();
+
             const menu = document.getElementById('ctx-item');
+            const editBtn = menu.querySelector('[onclick*="openEditor"]');
+            
+            // Auto-detect: Sembunyikan "Edit Code" jika bukan file teks/code
+            const ext = name.split('.').pop().toLowerCase();
+            const codeExts = ['js', 'html', 'css', 'txt', 'json', 'py'];
+            
+            if (editBtn) {
+                editBtn.style.display = codeExts.includes(ext) ? 'block' : 'none';
+            }
+
             menu.style.display = 'block';
             menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
         }
+
 
         function filterList() {
             const val = document.getElementById('path-input').value.split('/').pop().trim().toLowerCase();
