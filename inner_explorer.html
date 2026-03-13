@@ -1,76 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; margin: 0; background: #fff; color: #333; }
-        .toolbar { padding: 10px; border-bottom: 1px solid #eee; display: flex; gap: 10px; background: #f9f9f9; }
-        .file-list { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
-        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; position: relative; }
-        .item:hover { background: #e8f2ff; }
-        .item img { width: 48px; height: 48px; margin-bottom: 5px; }
-        .item-name { font-size: 12px; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        #drop-overlay { position: fixed; inset: 0; background: rgba(0,123,255,0.2); display: none; align-items: center; justify-content: center; font-weight: bold; border: 3px dashed #007bff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #333; overflow-x: hidden; }
+        .toolbar { padding: 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; background: #fdfdfd; position: sticky; top: 0; z-index: 5; }
+        .toolbar button { padding: 5px 10px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; }
+        
+        .explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; padding: 15px; }
+        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; position: relative; border: 1px solid transparent; }
+        .item:hover { background: #f0f7ff; border: 1px solid #cce5ff; }
+        .item img { width: 45px; height: 45px; margin-bottom: 5px; pointer-events: none; }
+        .item-name { font-size: 11px; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Drop Zone */
+        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.15); border: 2px dashed #007bff; display: none; align-items: center; justify-content: center; z-index: 10; font-weight: bold; color: #007bff; pointer-events: none; }
+
+        /* Context Menu */
+        #ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 100; min-width: 120px; }
+        #ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; }
+        #ctx-menu div:hover { background: #007bff; color: white; }
     </style>
 </head>
 <body>
+
     <div class="toolbar">
-        <button onclick="goBack()">⬅️</button>
-        <input type="text" id="search" placeholder="Search..." onkeyup="filter()">
+        <button onclick="window.history.back()">⬅️</button>
+        <button onclick="loadData()">🔄 Refresh</button>
+        <div id="status" style="font-size: 10px; align-self: center; color: #888;">Ready</div>
     </div>
-    <div id="file-list" class="file-list"></div>
-    <div id="drop-overlay">Drop to Upload</div>
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentFolderId = urlParams.get('folderId');
-    //https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec
-    //const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI INI
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec";
+    <div id="file-list" class="explorer-grid">
+        <!-- Data file & folder muncul di sini -->
+    </div>
 
-    async function loadData() {
-        const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${currentFolderId}`);
-        const data = await res.json();
-        render(data);
-    }
+    <div id="drop-zone">Lepaskan file untuk Upload</div>
 
-    function render(data) {
-        const list = document.getElementById('file-list');
-        list.innerHTML = "";
-        
-        data.folders.forEach(f => {
-            list.innerHTML += `<div class="item" ondblclick="parent.createNewExplorer('${f.id}', '${f.name}')">
-                <img src="https://img.icons8.com"><div class="item-name">${f.name}</div>
-            </div>`;
-        });
+    <!-- Context Menu -->
+    <div id="ctx-menu">
+        <div onclick="renameItem()">Rename</div>
+        <div onclick="deleteItem()" style="color: red;">Delete (Trash)</div>
+    </div>
 
-        data.files.forEach(f => {
-            const icon = f.mime.includes('image') ? 'image' : 'file';
-            list.innerHTML += `<div class="item" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})">
-                <img src="https://img.icons8.com{icon}.png"><div class="item-name">${f.name}</div>
-            </div>`;
-        });
-    }
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwtmbwIHH1IYbqQdY64-cwPm-J1VAVxD9LrMEgrct3tSUMGgjk2yup-3O6Khs2JZIl6/exec";
+        const params = new URLSearchParams(window.location.search);
+        const folderId = params.get('folderId');
+        let selectedId = null;
+        let selectedName = "";
 
-    // Drag & Drop Logic
-    window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-overlay').style.display='flex'; };
-    window.ondragleave = () => document.getElementById('drop-overlay').style.display='none';
-    window.ondrop = async (e) => {
-        e.preventDefault();
-        document.getElementById('drop-overlay').style.display='none';
-        for(let file of e.dataTransfer.files) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({
-                    action: 'UPSERT_FILE', name: file.name, mimeType: file.type, 
-                    base64: reader.result.split(',')[1], folderId: currentFolderId
-                })});
-                loadData();
-            };
+        async function loadData() {
+            document.getElementById('status').innerText = "Loading...";
+            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${folderId}`);
+            const data = await res.json();
+            render(data);
+            document.getElementById('status').innerText = "Done";
         }
-    };
 
-    loadData();
-</script>
+        function render(data) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+
+            // Render Folders
+            data.folders.forEach(f => {
+                const div = document.createElement('div');
+                div.className = "item";
+                div.innerHTML = `<img src="https://img.icons8.com"><div class="item-name">${f.name}</div>`;
+                div.onclick = () => window.location.href = `inner_explorer.html?folderId=${f.id}`;
+                div.oncontextmenu = (e) => showCtx(e, f.id, f.name);
+                list.appendChild(div);
+            });
+
+            // Render Files
+            data.files.forEach(f => {
+                const div = document.createElement('div');
+                div.className = "item";
+                const icon = f.mime.includes('image') ? 'image' : 'file';
+                div.innerHTML = `<img src="https://img.icons8.com{icon}.png"><div class="item-name">${f.name}</div>`;
+                div.ondblclick = () => parent.handleFileOpen(f);
+                div.oncontextmenu = (e) => showCtx(e, f.id, f.name);
+                list.appendChild(div);
+            });
+        }
+
+        // Context Menu Logic
+        function showCtx(e, id, name) {
+            e.preventDefault();
+            selectedId = id; selectedName = name;
+            const menu = document.getElementById('ctx-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        }
+
+        window.onclick = () => document.getElementById('ctx-menu').style.display = 'none';
+
+        async function renameItem() {
+            const newName = prompt("Nama baru:", selectedName);
+            if (newName) {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'RENAME', id: selectedId, newName }) });
+                loadData();
+            }
+        }
+
+        // Drag and Drop Upload
+        window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display = 'flex'; };
+        window.ondragleave = () => document.getElementById('drop-zone').style.display = 'none';
+        window.ondrop = async (e) => {
+            e.preventDefault();
+            document.getElementById('drop-zone').style.display = 'none';
+            document.getElementById('status').innerText = "Uploading...";
+            
+            for (let file of e.dataTransfer.files) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({
+                        action: 'UPSERT_FILE', 
+                        name: file.name, 
+                        mimeType: file.type, 
+                        base64: reader.result.split(',')[1], 
+                        folderId: folderId
+                    })});
+                    loadData();
+                };
+            }
+        }
+
+        loadData();
+    </script>
+
 </body>
 </html>

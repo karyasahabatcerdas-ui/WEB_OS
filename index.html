@@ -1,134 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub-OS | Private Cloud Desktop</title>
+    <title>WEB_OS | Private Cloud Desktop</title>
     <style>
         :root {
-            /* Default Light Theme */
-            --bg-desktop: url('https://images.unsplash.com');
             --bg-panel: rgba(255, 255, 255, 0.7);
             --text-main: #333;
             --accent: #007bff;
             --border: rgba(0,0,0,0.1);
-            --win-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-
-        /* Theme Presets */
         [data-theme="dark"] {
-            --bg-desktop: #1a1a1a; --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1);
+            --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1);
         }
-        [data-theme="blue-dark"] {
-            --bg-desktop: #0a192f; --bg-panel: rgba(16, 33, 65, 0.9); --text-main: #64ffda; --accent: #00d2ff; --border: rgba(100, 255, 218, 0.2);
-        }
-        [data-theme="green-dark"] {
-            --bg-desktop: #0d1a0d; --bg-panel: rgba(20, 40, 20, 0.9); --text-main: #00ff41; --accent: #2ecc71; --border: rgba(0, 255, 65, 0.2);
-        }
-
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-
-        /* Desktop Area */
-        #desktop {
-            width: 100vw; height: calc(100vh - 50px);
-            background: var(--bg-desktop) center/cover no-repeat;
-            position: relative;
-        }
-
+        #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }
+        
         /* Taskbar */
-        .taskbar {
-            height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px);
-            position: fixed; bottom: 0; width: 100%; display: flex;
-            justify-content: space-between; align-items: center; z-index: 10000;
-            border-top: 1px solid var(--border);
-        }
-        .taskbar-left, .taskbar-right { display: flex; align-items: center; padding: 0 15px; }
-        .start-btn { cursor: pointer; padding: 5px 10px; border-radius: 8px; transition: 0.2s; }
-        .start-btn:hover { background: rgba(255,255,255,0.2); }
+        .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
+        .start-btn { cursor: pointer; padding: 5px 15px; }
 
-        /* Windows System */
-        .sub-window {
-            position: absolute; width: 600px; height: 400px;
-            background: var(--bg-panel); backdrop-filter: blur(20px);
-            border-radius: 12px; box-shadow: var(--win-shadow);
-            display: flex; flex-direction: column; overflow: hidden;
-            border: 1px solid var(--border); min-width: 300px; min-height: 200px;
-            resize: both; z-index: 10;
-        }
-        .win-header {
-            padding: 10px 15px; background: rgba(0,0,0,0.05); cursor: move;
-            display: flex; justify-content: space-between; align-items: center;
-            color: var(--text-main); font-weight: 600; font-size: 14px;
-        }
-        .win-controls button {
-            background: none; border: none; color: var(--text-main);
-            margin-left: 10px; cursor: pointer; font-size: 16px; opacity: 0.7;
-        }
-        .win-body { flex: 1; overflow: hidden; position: relative; }
+        /* Window Style */
+        .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; resize: both; }
+        .win-header { padding: 10px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); }
+        .win-body { flex: 1; overflow: hidden; }
 
-        /* Snap Preview */
-        #snap-preview {
-            display: none; position: absolute; background: rgba(0,123,255,0.2);
-            border: 2px solid var(--accent); z-index: 9999; pointer-events: none;
-        }
-
-        /* Modals & Overlays */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            display: none; align-items: center; justify-content: center; z-index: 20000;
-        }
+        /* Login Screen */
+        .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
     </style>
 </head>
 <body data-theme="light">
 
-    <div id="desktop">
-        <!-- Windows will be injected here -->
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <h2>WEB_OS Login</h2>
+        <input type="password" id="login-pass" placeholder="Password" style="padding:10px; border-radius:5px; border:none;">
+        <button onclick="attemptLogin()" style="margin-top:10px; padding:5px 20px; cursor:pointer;">Unlock</button>
     </div>
+
+    <!-- Desktop Area -->
+    <div id="desktop"></div>
 
     <!-- Taskbar -->
     <div class="taskbar">
-        <div class="taskbar-left">
-            <div class="start-btn" onclick="toggleStartMenu()">
-                <img src="https://img.icons8.com" alt="Start">
-            </div>
-            <div id="taskbar-apps" style="display:flex; margin-left:15px; gap:8px;"></div>
+        <div class="start-btn" onclick="createNewExplorer()">
+            <img src="https://img.icons8.com">
         </div>
-        <div class="taskbar-right">
-            <div id="clock-tray" style="text-align:right; cursor:pointer; color:var(--text-main); font-size:12px;">
-                <div id="time-val" style="font-weight:bold;">00:00</div>
-                <div id="date-val">01 Jan 2024</div>
-            </div>
-        </div>
+        <div id="taskbar-apps" style="display:flex; gap:10px;"></div>
+        <div id="clock" style="padding-right:15px; color:var(--text-main); font-size:12px;">00:00</div>
     </div>
 
-    <!-- Snap Indicator -->
-    <div id="snap-preview"></div>
+    <script>
 
-    <!-- Lanjut ke bagian script di pesan berikutnya... -->
-     <script>
-    let windowCount = 0;
-    let currentFolderId = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B"; // GANTI DENGAN ID DRIVE KAMU
-    //https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec
-    //const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI DENGAN URL GAS KAMU
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec"; 
+    // === CONFIGURATION ===
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwtmbwIHH1IYbqQdY64-cwPm-J1VAVxD9LrMEgrct3tSUMGgjk2yup-3O6Khs2JZIl6/exec";
+        const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
+        const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
+        let windowCount = 0;
 
-    // 1. Fungsi Membuat Jendela Baru (Multi-Window)
-    function createNewExplorer(targetId = currentFolderId, title = "Explorer") {
+        let pinnedApps = [];
+        let historyStack = [];
+
+    // === 1. SECURITY & AUTH ===
+    async function sha256(str) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function attemptLogin() {
+        const input = document.getElementById('login-pass').value;
+        const hashed = await sha256(input);
+        if (hashed === STORED_HASH) {
+            document.getElementById('login-screen').style.display = 'none';
+            sessionStorage.setItem("isAuth", "true");
+            initOS();
+        } else { alert("Akses Ditolak, Bro!"); }
+    }
+
+    function initOS() {
+        updateClock();
+        setInterval(updateClock, 1000);
+        restoreCloudSession(); // Fitur Hibernate
+        loadPinnedApps();      // Fitur Start Menu
+    }
+
+    // === 2. WINDOW MANAGER ===
+    function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
         windowCount++;
         const winId = `win-${windowCount}`;
         const appId = `app-${winId}`;
 
         const winHtml = `
-            <div id="${winId}" class="sub-window" style="top:50px; left:50px;" onmousedown="focusWindow(this)">
-                <div class="win-header" onmousedown="dragElement(this.parentElement)">
+            <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')">
+                <div class="win-header" onmousedown="dragWin(this.parentElement)">
                     <span>📁 ${title}</span>
                     <div class="win-controls">
-                        <button onclick="toggleMinimize('${winId}')">_</button>
-                        <button onclick="closeWindow('${winId}', '${appId}')">×</button>
+                        <button onclick="minimizeWin('${winId}')">_</button>
+                        <button onclick="closeWin('${winId}', '${appId}')">×</button>
                     </div>
                 </div>
                 <div class="win-body">
-                    <iframe src="inner_explorer.html?folderId=${targetId}" style="width:100%; height:100%; border:none;"></iframe>
+                    <iframe src="inner_explorer.html?folderId=${folderId}" id="frame-${winId}" style="width:100%; height:100%; border:none;"></iframe>
                 </div>
             </div>`;
         
@@ -136,195 +109,106 @@
         addToTaskbar(winId, appId, title);
     }
 
-    // 2. Logika Drag & Aero Snap (Windows 11 Style)
-    function dragElement(elmnt) {
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        const snapPreview = document.getElementById('snap-preview');
-        
-        elmnt.onmousedown = (e) => {
+    function dragWin(el) {
+        let p1=0, p2=0, p3=0, p4=0;
+        el.onmousedown = (e) => {
             if (e.target.tagName === 'BUTTON') return;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDrag;
-            document.onmousemove = elementDrag;
+            focusWin(el.id);
+            p3=e.clientX; p4=e.clientY;
+            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; checkSnap(el); };
+            document.onmousemove = (e) => {
+                p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
+                el.style.top = (el.offsetTop - p2) + "px";
+                el.style.left = (el.offsetLeft - p1) + "px";
+            };
         };
-
-        function elementDrag(e) {
-            pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
-            pos3 = e.clientX; pos4 = e.clientY;
-            
-            let newTop = elmnt.offsetTop - pos2;
-            let newLeft = elmnt.offsetLeft - pos1;
-            
-            elmnt.style.top = newTop + "px";
-            elmnt.style.left = newLeft + "px";
-
-            // Snap Detection
-            const threshold = 25;
-            const wWidth = window.innerWidth;
-            const wHeight = window.innerHeight - 50;
-
-            if (e.clientY < threshold) showSnap(0, 0, wWidth, wHeight); // Maximize
-            else if (e.clientX < threshold) showSnap(0, 0, wWidth / 2, wHeight); // Left
-            else if (e.clientX > wWidth - threshold) showSnap(wWidth / 2, 0, wWidth / 2, wHeight); // Right
-            else snapPreview.style.display = 'none';
-        }
-
-        function showSnap(x, y, w, h) {
-            snapPreview.style.display = 'block';
-            snapPreview.style.left = x + 'px'; snapPreview.style.top = y + 'px';
-            snapPreview.style.width = w + 'px'; snapPreview.style.height = h + 'px';
-        }
-
-        function closeDrag(e) {
-            if (snapPreview.style.display === 'block') {
-                elmnt.style.left = snapPreview.style.left;
-                elmnt.style.top = snapPreview.style.top;
-                elmnt.style.width = snapPreview.style.width;
-                elmnt.style.height = snapPreview.style.height;
-                snapPreview.style.display = 'none';
-            }
-            document.onmouseup = null; document.onmousemove = null;
-        }
     }
 
-    // 3. Taskbar & Focus Logic
-    function addToTaskbar(winId, appId, title) {
-        const icon = `<div id="${appId}" class="task-btn active" onclick="toggleMinimize('${winId}')">📁</div>`;
-        document.getElementById('taskbar-apps').insertAdjacentHTML('beforeend', icon);
-    }
-
-    function focusWindow(win) {
+    function focusWin(id) {
         document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
-        win.style.zIndex = "100";
+        document.getElementById(id).style.zIndex = "100";
     }
 
-    function toggleMinimize(winId) {
-        const win = document.getElementById(winId);
-        win.style.display = win.style.display === 'none' ? 'flex' : 'none';
-        const appId = `app-${winId}`;
-        document.getElementById(appId).classList.toggle('active');
-    }
-
-    function closeWindow(winId, appId) {
-        document.getElementById(winId).remove();
+    function closeWin(id, appId) {
+        document.getElementById(id).remove();
         document.getElementById(appId).remove();
     }
 
-    // 4. Global Shortcuts (Hacker Mode)
+    // === 3. TERMINAL ENGINE ===
+    async function openTerminal() {
+        const winId = `term-${Date.now()}`;
+        const html = `
+            <div id="${winId}" class="sub-window" style="width:500px; height:300px; background:#000; color:#0f0;">
+                <div class="win-header" style="background:#333; color:#fff;"><span>>_ Terminal</span><button onclick="this.closest('.sub-window').remove()">X</button></div>
+                <div class="win-body" style="padding:10px; font-family:monospace; overflow-y:auto;">
+                    <div id="out-${winId}">Welcome to WEB_OS Terminal. Type 'help' for commands.</div>
+                    <div style="display:flex"><span>$ &nbsp;</span><input type="text" onkeypress="execTerm(event, this, '${winId}')" style="background:none; border:none; color:#0f0; outline:none; flex:1; font-family:inherit;"></div>
+                </div>
+            </div>`;
+        document.getElementById('desktop').insertAdjacentHTML('beforeend', html);
+    }
+
+    async function execTerm(e, input, winId) {
+        if (e.key === 'Enter') {
+            const cmd = input.value.trim();
+            const out = document.getElementById(`out-${winId}`);
+            out.innerHTML += `<div>$ ${cmd}</div>`;
+            input.value = "";
+            
+            if (cmd === 'quota') {
+                const res = await fetch(`${GAS_URL}?action=GET_DRIVE_INFO`);
+                const info = await res.json();
+                out.innerHTML += `<div>Storage: ${(info.used/(1024**3)).toFixed(2)}GB used.</div>`;
+            } else if (cmd === 'help') {
+                out.innerHTML += `<div>Commands: quota, help, clear, neofetch</div>`;
+            } else if (cmd === 'clear') {
+                out.innerHTML = "";
+            } else {
+                out.innerHTML += `<div>Command not found.</div>`;
+            }
+        }
+    }
+
+    // === 4. CLOUD HIBERNATE (SAVE SESSION) ===
+    async function saveCloudSession() {
+        const windows = [];
+        document.querySelectorAll('.sub-window').forEach(win => {
+            windows.push({
+                id: win.id,
+                top: win.style.top,
+                left: win.style.left,
+                title: win.querySelector('.win-header span').innerText
+            });
+        });
+        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) });
+        alert("Session Saved to Cloud!");
+    }
+
+    async function restoreCloudSession() {
+        const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
+        const windows = await res.json();
+        windows.forEach(w => createNewExplorer(ROOT_ID, w.title));
+    }
+
+    // === 5. KEYBOARD SHORTCUTS ===
     window.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key === 'n') createNewExplorer(); // New Window
-        if (e.altKey && e.key === 't') openTerminal(); // Terminal
-        if (e.altKey && e.key === 'p') openQuickSettings(); // Settings
-        if (e.altKey && e.key === 'l') lockOS(); // Lock
-        if (e.altKey && e.key === '/') toggleShortcutHub(); // Help
-        if (e.ctrlKey && e.shiftKey && e.key === 'Escape') toggleTaskManager(); // Task Manager
+        if (e.altKey && e.key === 'n') createNewExplorer();
+        if (e.altKey && e.key === 't') openTerminal();
+        if (e.altKey && e.key === 's') saveCloudSession();
+        if (e.altKey && e.key === 'l') document.getElementById('login-screen').style.display = 'flex';
+        if (e.ctrlKey && e.shiftKey && e.key === 'Escape') toggleTaskManager();
     });
 
-    // 5. Clock Update
-    setInterval(() => {
+    // === HELPERS ===
+    function updateClock() {
         const now = new Date();
-        document.getElementById('time-val').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        document.getElementById('date-val').innerText = now.toLocaleDateString('id-ID', {day:'numeric', month:'short'});
-    }, 1000);
-
-
-
-
-
-
-    // Ganti dengan hasil hash SHA-256 password pilihanmu
-const STORED_HASH = "HASIL_HASH_SHA256_KAMU_DI_SINI"; 
-
-async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function attemptLogin() {
-    const input = document.getElementById('login-pass').value;
-    const hash = await sha256(input);
-    if (hash === STORED_HASH) {
-        sessionStorage.setItem("isAuth", "true");
-        document.getElementById('login-screen').style.display = 'none';
-        // Auto-restore session dari Cloud setelah login
-        restoreCloudSession();
-    } else {
-        alert("Password Salah!");
+        document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     }
-}
-
-
-function openHelp() {
-    // Membuka jendela khusus yang memanggil readme_ui.html
-    const winId = `help-${Date.now()}`;
-    const winHtml = `
-        <div id="${winId}" class="sub-window" style="width:800px; height:550px; top:50px; left:100px;">
-            <div class="win-header" onmousedown="dragElement(this.parentElement)">
-                <span>📖 User Manual & Documentation</span>
-                <div class="win-controls">
-                    <button onclick="this.closest('.sub-window').remove()">×</button>
-                </div>
-            </div>
-            <div class="win-body">
-                <iframe src="readme_ui.html" style="width:100%; height:100%; border:none;"></iframe>
-            </div>
-        </div>`;
-    document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-}
-
-
-async function executeCmd(input) {
-    const args = input.split(' ');
-    const cmd = args[0].toLowerCase();
     
-    switch(cmd) {
-        case 'ls': 
-            const data = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${currentFolderId}`);
-            // Tampilkan list file ke terminal output
-            break;
-        case 'rm':
-            await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'MOVE_TO_TRASH', id: args[1]})});
-            printToTerminal("File moved to trash.");
-            break;
-        // Dan seterusnya...
-        // Tambahkan di dalam switch(cmd) fungsi terminal client-side
-        case 'theme':
-            const themeName = args[0]; // misal: theme dark
-            if(['light', 'dark', 'blue-dark', 'green-dark'].includes(themeName)) {
-                setTheme(themeName);
-                printLine(`Theme changed to ${themeName}`);
-            } else {
-                printLine("Error: Theme not found. Use: light, dark, blue-dark, green-dark");
-            }
-            break;
-
-        case 'df': // Disk Free (ala Linux)
-            const infoRes = await fetch(`${GAS_URL}?action=GET_DRIVE_INFO`);
-            const info = await infoRes.json();
-            const used = (info.used / (1024**3)).toFixed(2);
-            const total = (info.limit / (1024**3)).toFixed(2);
-            printLine(`Drive Usage: ${used}GB / ${total}GB (${Math.round((info.used/info.limit)*100)}%)`);
-            break;
-
-        case 'neofetch': // Gaya Linux buat pamer spek OS
-            printLine(`
-                <span style="color:var(--accent)"><b>GitHub-OS v1.0</b></span><br>
-                ------------------<br>
-                <b>OS:</b> Cloud Desktop Environment<br>
-                <b>Host:</b> GitHub Pages<br>
-                <b>Kernel:</b> Google Apps Script API<br>
-                <b>Shell:</b> Custom JS Terminal<br>
-                <b>Theme:</b> ${document.documentElement.getAttribute('data-theme') || 'default'}<br>
-                <b>User:</b> root@drive
-            `);
-            break;
-
+    function toggleStartMenu() {
+        // Logic start menu pop-up (seperti yang dibuat sebelumnya)
+        alert("Start Menu: Buka Explorer, Terminal, atau Settings via Shortcut!");
     }
-}
-
-
 </script>
 
 </body>
