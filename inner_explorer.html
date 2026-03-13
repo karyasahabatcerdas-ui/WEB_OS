@@ -20,8 +20,13 @@
 
         /* MAIN CONTENT (DETAILS VIEW) */
         #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .address-bar { padding: 10px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; background: #fff; align-items: center; }
-        #path-input { flex: 1; padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; outline: none; background: #fdfdfd; }
+        
+        /* Toolbar 2 Baris */
+        .toolbar { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fdfdfd; border-bottom: 1px solid #eee; }
+        .nav-group { display: flex; gap: 5px; }
+        .nav-btn { border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 4px 8px; }
+        #filter-input { width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 12px; outline: none; }
+        #path-input { flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace; }
         
         .list-header, .file-row { display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; font-size: 13px; align-items: center; border-bottom: 1px solid #f5f5f5; }
         .list-header { font-weight: bold; background: #fafafa; position: sticky; top: 0; z-index: 5; color: #666; }
@@ -40,15 +45,26 @@
 
     <div id="side-pane">
         <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px;">DRIVES & FOLDERS</div>
-        <div id="root-anchor" class="tree-node" style="margin-left:0;">
-            <!-- Tree Root akan di-render di sini -->
-        </div>
+        <div id="root-anchor" class="tree-node" style="margin-left:0;"></div>
     </div>
 
     <div id="main-container">
-        <div class="address-bar">
-            <button onclick="loadData(lastParentId)" style="border:1px solid #ddd; background:none; cursor:pointer; border-radius:4px;">⬅️</button>
-            <input type="text" id="path-input" placeholder="Search files..." onkeyup="filterFiles()">
+        <div class="toolbar">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="loadData(lastParentId)"><i class="fas fa-arrow-left"></i></button>
+                    <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
+                </div>
+                <div style="flex: 1; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 10px; top: 8px; color: #888; font-size: 12px;"></i>
+                    <input type="text" id="filter-input" placeholder="Cari file..." onkeyup="filterList()">
+                </div>
+                <span id="status" style="font-size:10px; color:gray;">Ready</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 10px; font-weight: bold; color: #999;">PATH:</span>
+                <input type="text" id="path-input" readonly>
+            </div>
         </div>
         <div class="list-header"><div>Name</div><div>Type</div><div>Size</div></div>
         <div id="file-list" style="overflow-y:auto; flex:1;"></div>
@@ -56,506 +72,180 @@
 
     <div id="drop-zone">Drop to Upload</div>
 
+    <!-- Menus -->
     <div id="ctx-item" class="ctx-menu">
-        <div onclick="renameItem()">Rename</div>
-        <div onclick="deleteItem()" style="color:red">Delete</div>
         <div onclick="parent.openEditor(selectedId, selectedName)"><i class="fas fa-code"></i> Edit Code</div>
+        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
+        <div onclick="deleteItem()" style="color:red"><i class="fas fa-trash"></i> Delete</div>
     </div>
-
     <div id="ctx-empty" class="ctx-menu">
         <div onclick="createNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</div>
         <div onclick="createNewFile()"><i class="fas fa-file-plus"></i> New Text File</div>
-        <hr style="border:0; border-top:1px solid #eee;">
+        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
         <div onclick="loadData()">Refresh</div>
     </div>
-
-<div class="toolbar" style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fdfdfd; border-bottom: 1px solid #eee;">
-    
-    <!-- Baris 1: Tombol Navigasi & Global Search -->
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <div class="nav-group" style="display: flex; gap: 5px;">
-            <button class="nav-btn" onclick="loadData(lastParentId)" title="Back"><i class="fas fa-arrow-left"></i></button>
-            <button class="nav-btn" onclick="loadData()" title="Refresh"><i class="fas fa-sync"></i></button>
-        </div>
-        <!-- Search Input khusus untuk filter file di folder ini -->
-        <div style="flex: 1; position: relative;">
-            <i class="fas fa-search" style="position: absolute; left: 10px; top: 8px; color: #888; font-size: 12px;"></i>
-            <input type="text" id="filter-input" placeholder="Cari file dalam folder ini..." onkeyup="filterList()" 
-                   style="width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 12px; outline: none; box-sizing: border-box;">
-        </div>
+    <div id="ctx-sidebar" class="ctx-menu">
+        <div onclick="unpinRoot()" style="color:red">Unpin Drive</div>
     </div>
-
-    <!-- Baris 2: Address Bar (Path View Only) -->
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 10px; font-weight: bold; color: #999;">PATH:</span>
-        <input type="text" id="path-input" readonly 
-               style="flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace;">
-    </div>
-    <!-- Tambahkan ini di dalam div class="toolbar" -->
-<span id="status" style="font-size:10px; color:gray; margin-left:10px;">Ready</span>
-
-</div>
-
-
-
-
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEKOwPXtlJYFbWrEpm5n0mjsFROUzfBS3FQvbYMH5t3secOLTIm4y5ojdzIJigfEK6/exec"; 
+        const GAS_URL = "https://script.google.com"; 
         const ID_FDD = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const params = new URLSearchParams(window.location.search);
 
-        // Gunakan activeFolderId secara konsisten
         let activeFolderId = params.get('folderId') || ID_FDD; 
         let currentFolderName = params.get('pName') || "Home Root";
         let externalRoots = []; 
         let lastParentId = ""; 
         let loadedNodes = {}; 
-        let pathStack = []; // Biarkan kosong, nanti diisi otomatis oleh toggleFolder saat init
+        let pathStack = []; 
         let selectedId = null, selectedName = "";
 
-        // 1. INITIALIZE OS EXPLORER
         async function init() {
-            // Gunakan ID dari URL jika ada, jika tidak balik ke ID_FDD
             const rootId = activeFolderId; 
             const anchor = document.getElementById('root-anchor');
-            
-            // Reset stack sebelum memulai agar tidak duplikat
             pathStack = []; 
-            
             if (anchor) {
                 anchor.innerHTML = createTreeNode(rootId, "Home Root", true, 0);
-                // Panggil toggleFolder untuk memicu render pertama kali
                 const firstRow = anchor.querySelector('.tree-row');
                 if (firstRow) await toggleFolder(rootId, "Home Root", firstRow, 0);
             }
         }
 
-
-        // 2. TREE LOGIC (RECURSIVE)
         function createTreeNode(id, name, isRoot = false, depth = 0) {
-            // Gunakan ternary operator '?' dan ':' (BUKAN '=')
             const activeClass = (id === activeFolderId) ? 'active' : '';
             const iconClass = isRoot ? 'fa-home' : 'fa-folder';
-            
             return `
                 <div class="tree-node" id="node-${id}">
-                    <div class="tree-row ${activeClass}" 
-                        onclick="toggleFolder('${id}', '${name}', this, ${depth})"
-                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')"
-                        data-depth="${depth}">
-                        <span class="expander">▶</span>
-                        <i class="fas ${iconClass}"></i>
-                        <span>${name}</span>
+                    <div class="tree-row ${activeClass}" onclick="toggleFolder('${id}', '${name}', this, ${depth})" oncontextmenu="showSidebarCtx(event, '${id}', '${name}')" data-depth="${depth}">
+                        <span class="expander">▶</span><i class="fas ${iconClass}"></i><span>${name}</span>
                     </div>
                     <div class="sub-tree" id="sub-${id}"></div>
                 </div>`;
         }
 
-
-        async function renameItem() {
-            if (!selectedId) return;
-            const newName = prompt("Nama baru:", selectedName);
-            if (newName && newName !== selectedName) {
-                // Pakai optional chaining (?) agar jika status ga ada, kode ga mati
-                document.getElementById('status')?.innerText = "Renaming..."; 
-                
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
-                });
-                
-                if (document.getElementById('status')) document.getElementById('status').innerText = "Done";
-                loadData(activeFolderId);
-            }
+        async function loadData(id = activeFolderId) {
+            document.getElementById('status').innerText = "Loading...";
+            try {
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                renderMainContent(data);
+                document.getElementById('status').innerText = "Done";
+            } catch (e) { document.getElementById('status').innerText = "Error"; }
         }
-
-
-
-
-        async function deleteItem() {
-            if (confirm(`Hapus "${selectedName}" ke Trash?`)) {
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'MOVE_TO_TRASH', id: selectedId }) 
-                });
-                loadData(activeFolderId);
-            }
-        }
-
-        // Update handleFileOpen di index.html untuk panggil Editor
-        function handleFileOpen(file) {
-            const ext = file.name.split('.').pop().toLowerCase();
-            const codeExts = ['js', 'html', 'css', 'txt', 'py', 'json'];
-            
-            if (codeExts.includes(ext)) {
-                openEditor(file.id, file.name);
-            } else if (file.mime.includes('image')) {
-                openPreview(file);
-            } else {
-                window.open(`https://drive.google.com{file.id}`);
-            }
-        }
-
 
         async function toggleFolder(id, name, element, depth) {
             const subTree = document.getElementById(`sub-${id}`);
             const expander = element.querySelector('.expander');
-
-            // === LOGIKA SMART BREADCRUMB (REPLACE LEVEL) ===
-            // Potong stack sesuai kedalaman (depth). 
-            // Misal klik level 1, maka semua data dari level 1 ke bawah dibuang dulu.
             pathStack = pathStack.slice(0, depth); 
-            pathStack.push({ id: id, name: name, depth: depth });
-
-            const fullPath = pathStack.map(item => item.name).join(' / ');
-            document.getElementById('path-input').value = `Root / ${fullPath}`;
-            // ===============================================
-
+            pathStack.push({ id, name, depth });
+            document.getElementById('path-input').value = `Root / ` + pathStack.map(i => i.name).join(' / ');
             activeFolderId = id;
             document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
             element.classList.add('active');
+            if (pathStack.length > 1) lastParentId = pathStack[pathStack.length - 2].id;
+            else lastParentId = "";
 
             if (!loadedNodes[id]) {
                 if (expander) expander.innerHTML = "⌛";
                 const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
                 const data = await res.json();
-                
-                // Render sub-tree dengan depth + 1
                 subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name, false, depth + 1)).join('');
                 loadedNodes[id] = true;
                 renderMainContent(data);
-            } else {
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-                renderMainContent(data);
-            }
+                if (expander) expander.innerHTML = "▶";
+            } else { await loadData(id); }
 
-            if (subTree) {
-                const isOpening = !subTree.classList.contains('show');
-                subTree.classList.toggle('show', isOpening);
-                if (expander) {
-                    expander.classList.toggle('open', isOpening);
-                    expander.innerHTML = "▶";
-                }
-            }
+            const isOpening = !subTree.classList.contains('show');
+            subTree.classList.toggle('show', isOpening);
+            if (expander) expander.classList.toggle('open', isOpening);
         }
 
-
-        // 3. MAIN CONTENT LOGIC (DETAILS)
         function renderMainContent(data) {
             const list = document.getElementById('file-list');
-            if (!list) return;
             list.innerHTML = "";
-
-            // Render Folder di Panel Kanan
             data.folders.forEach(f => {
-                list.innerHTML += `
-                    <div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
-                        <div><i class="fas fa-folder"></i> ${f.name}</div>
-                        <div style="color:#999">Folder</div>
-                        <div style="color:#999">--</div>
-                    </div>`;
+                list.innerHTML += `<div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-folder"></i> ${f.name}</div><div>Folder</div><div>--</div></div>`;
             });
-
-            // Render File di Panel Kanan
             data.files.forEach(f => {
                 const ext = f.name.split('.').pop().toUpperCase();
-                list.innerHTML += `
-                    <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
-                        <div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div>
-                        <div style="color:#999">${ext} File</div>
-                        <div style="color:#999">N/A</div>
-                    </div>`;
+                list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen(${JSON.stringify(f)})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
             });
-        }
-
-
-        function createTreeNode(id, name, isRoot = false, depth = 0) {
-            return `
-                <div class="tree-node" id="node-${id}">
-                    <div class="tree-row" 
-                        onclick="toggleFolder('${id}', '${name}', this, ${depth})"
-                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')"
-                        data-depth="${depth}">
-                        <span class="expander">▶</span>
-                        <i class="fas ${isRoot ? 'fa-home' : 'fa-folder'}"></i>
-                        <span>${name}</span>
-                    </div>
-                    <div class="sub-tree" id="sub-${id}"></div>
-                </div>`;
-        }
-
-
-        // --- LOGIKA KLIK KANAN (CONTEXT MENU) ---
-
-        // 1. Klik Kanan pada File/Folder di Panel Kanan
-        function showCtx(e, id, name) {
-            e.preventDefault();
-            e.stopPropagation(); // Biar nggak tembus ke menu area kosong
-            selectedId = id; 
-            selectedName = name;
-            
-            const menu = document.getElementById('ctx-item');
-            closeMenus(); // Tutup menu lain dulu
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
-        }
-
-        // 2. Klik Kanan di Sidebar (Panel Kiri)
-        // Tambahkan event listener ini di dalam fungsi render() pada elemen sidebar
-        function showSidebarCtx(e, id, name) {
-            e.preventDefault();
-            e.stopPropagation();
-            selectedId = id;
-            selectedName = name;
-            
-            const menu = document.getElementById('ctx-sidebar');
-            closeMenus();
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px';
-            menu.style.top = e.pageY + 'px';
-        }
-
-        // 3. Klik Kanan di Area Kosong (New Folder/File)
-        document.getElementById('main-container').oncontextmenu = (e) => {
-            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
-                e.preventDefault();
-                closeMenus();
-                const menu = document.getElementById('ctx-empty');
-                menu.style.display = 'block';
-                menu.style.left = e.pageX + 'px';
-                menu.style.top = e.pageY + 'px';
-            }
-        };
-
-        // === FUNGSI BUAT FOLDER BARU ===
-        async function createNewFolder() {
-            const name = prompt("Nama folder baru:");
-            if (!name) return;
-            
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.innerText = "Creating folder...";
-            
-            try {
-                await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ 
-                        action: "TERMINAL_EXEC", 
-                        command: "mkdir", 
-                        args: name, 
-                        currentDir: activeFolderId // SESUAIKAN NAMA VARIABELNYA DI SINI
-                    })
-                });
-                
-                if (statusEl) statusEl.innerText = "Success!";
-                loadData(activeFolderId); // REFRESH PAKAI ID YANG SAMA
-            } catch (e) {
-                if (statusEl) statusEl.innerText = "Error!";
-                console.error(e);
-            }
-        }
-
-
-
-        // === FUNGSI BUAT FILE TEKS BARU ===
-        async function createNewFile() {
-            const fileName = prompt("Masukkan Nama File (contoh: catatan.txt):");
-            if (!fileName) return;
-
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.innerText = "Creating File...";
-            
-            try {
-                // Kita kirim file kosong (base64 string kosong)
-                const res = await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "UPSERT_FILE",
-                        name: fileName,
-                        mimeType: "text/plain",
-                        base64: "", // File kosong
-                        folderId: activeFolderId // PAKAI NAMA VARIABEL YANG AKTIF
-                    })
-                });
-                
-                const result = await res.json();
-                if (result.status === "success") {
-                    if (statusEl) statusEl.innerText = "Success!";
-                    loadData(activeFolderId); // Refresh tampilan folder saat ini
-                } else {
-                    alert("Gagal buat file: " + result.msg);
-                }
-            } catch (e) {
-                if (statusEl) statusEl.innerText = "Error!";
-                console.error("Create File Error:", e);
-            }
-        }
-
-
-        // Tutup semua menu saat klik kiri di mana saja
-        window.onclick = closeMenus;
-        function closeMenus() {
-            document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
-        }
-
-        // --- FUNGSI ACTION (DELETE & RENAME) ---
-
-        // 1. Fungsi Delete (Pindah ke Trash)
-        async function deleteItem() {
-            if (!selectedId) return;
-            if (confirm(`Pindahkan "${selectedName}" ke Tempat Sampah?`)) {
-                document.getElementById('status').innerText = "Deleting...";
-                const res = await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "MOVE_TO_TRASH", id: selectedId })
-                });
-                const result = await res.json();
-                if(result.status === "success") {
-                    loadData(currentFolderId); // Refresh tampilan
-                } else {
-                    alert("Gagal hapus: " + result.msg);
-                }
-            }
-        }
-
-        // 2. Fungsi Rename
-        async function renameItem() {
-            if (!selectedId) return;
-            const newName = prompt("Masukkan nama baru:", selectedName);
-            if (newName && newName !== selectedName) {
-                document.getElementById('status').innerText = "Renaming...";
-                const res = await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "RENAME", id: selectedId, newName: newName })
-                });
-                const result = await res.json();
-                if(result.status === "success") {
-                    loadData(currentFolderId); // Refresh tampilan
-                } else {
-                    alert("Gagal rename: " + result.msg);
-                }
-            }
-        }
-
-
-        async function loadData(id = activeFolderId) {
-            activeFolderId = id;
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.innerText = "Loading...";
-
-            try {
-                // --- 1. Ambil Data Pohon & File ---
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-
-                // --- 2. UPDATE BREADCRUMB DULU (Supaya pathStack terbaru) ---
-                updateBreadcrumb(id, data.name);
-
-                // --- 3. HITUNG lastParentId (Setelah pathStack di-update) ---
-                if (pathStack.length > 1) {
-                    lastParentId = pathStack[pathStack.length - 2].id;
-                } else {
-                    lastParentId = ""; // Kembali ke root utama
-                }
-
-                // --- 4. Ambil Roots Eksternal ---
-                if (externalRoots.length === 0) {
-                    const rRes = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
-                    const rData = await rRes.json();
-                    externalRoots = Array.isArray(rData) ? rData : [];
-                }
-
-                // --- 5. Render UI ---
-               // Menjadi ini (sesuai nama fungsi yang sudah kita buat sebelumnya)
-                renderMainContent(data);
-
-                if (statusEl) statusEl.innerText = "Done";
-            } catch (err) {
-                console.error("Gagal Load Data:", err);
-                if (statusEl) statusEl.innerText = "Error!";
-            }
-        }
-
-
-        // Fungsi pembantu buat update Address Bar
-        function updateBreadcrumb(id, name) {
-            const folderIndex = pathStack.findIndex(item => item.id === id);
-            if (folderIndex === -1) {
-                pathStack.push({ id: id, name: name });
-            } else {
-                pathStack = pathStack.slice(0, folderIndex + 1);
-            }
-            const fullPath = pathStack.map(item => item.name).join(' / ');
-            document.getElementById('path-input').value = `Root / ${fullPath}`;
-        }
-
-
-
-        // Sinkronisasi: Klik di kanan akan menggerakkan tree di kiri
-        async function syncAndOpen(id, name) {
-            const rowElement = document.querySelector(`#node-${id} .tree-row`);
-            if (rowElement) {
-                toggleFolder(id, name, rowElement);
-            } else {
-                // Jika node belum ada di tree, buka manual
-                window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
-            }
         }
 
         function filterList() {
-            // Ambil input dari filter-input yang baru
             const val = document.getElementById('filter-input').value.toLowerCase();
-            const rows = document.querySelectorAll('.file-row');
-            
-            rows.forEach(row => {
-                // Ambil nama file dari kolom pertama di Details View
+            document.querySelectorAll('.file-row').forEach(row => {
                 const name = row.querySelector('div:first-child').innerText.toLowerCase();
                 row.style.display = name.includes(val) ? 'grid' : 'none';
             });
         }
 
+        function syncAndOpen(id, name) {
+            const row = document.querySelector(`#node-${id} .tree-row`);
+            if (row) row.click();
+            else window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
+        }
 
-        // Context Menu & Global Listeners
         function showCtx(e, id, name) {
             e.preventDefault(); e.stopPropagation();
             selectedId = id; selectedName = name;
             closeMenus();
-
             const menu = document.getElementById('ctx-item');
-            const editBtn = menu.querySelector('[onclick*="openEditor"]');
-            
-            // Auto-detect: Sembunyikan "Edit Code" jika bukan file teks/code
             const ext = name.split('.').pop().toLowerCase();
-            const codeExts = ['js', 'html', 'css', 'txt', 'json', 'py'];
-            
-            if (editBtn) {
-                editBtn.style.display = codeExts.includes(ext) ? 'block' : 'none';
+            const editBtn = menu.querySelector('[onclick*="openEditor"]');
+            if (editBtn) editBtn.style.display = ['js','html','css','txt','json'].includes(ext) ? 'block' : 'none';
+            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        }
+
+        function showSidebarCtx(e, id, name) {
+            e.preventDefault(); e.stopPropagation();
+            selectedId = id; selectedName = name;
+            closeMenus();
+            const menu = document.getElementById('ctx-sidebar');
+            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        }
+
+        document.getElementById('main-container').oncontextmenu = (e) => {
+            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
+                e.preventDefault(); closeMenus();
+                const menu = document.getElementById('ctx-empty');
+                menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
             }
+        };
 
-            menu.style.display = 'block';
-            menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        function closeMenus() { document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none'); }
+        window.onclick = closeMenus;
+
+        async function createNewFolder() {
+            const n = prompt("Folder baru:");
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'TERMINAL_EXEC', command:'mkdir', args:n, currentDir:activeFolderId})});
+                loadData();
+            }
         }
-
-
-        function filterList() {
-            const val = document.getElementById('path-input').value.split('/').pop().trim().toLowerCase();
-            const rows = document.querySelectorAll('.file-row');
-            
-            rows.forEach(row => {
-                // Cari teks di dalam kolom pertama (nama file)
-                const name = row.querySelector('div:first-child').innerText.toLowerCase();
-                row.style.display = name.includes(val) ? 'grid' : 'none';
-            });
+        async function createNewFile() {
+            const n = prompt("File baru:");
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'UPSERT_FILE', name:n, mimeType:'text/plain', base64:'', folderId:activeFolderId})});
+                loadData();
+            }
         }
-
-
-        window.onclick = () => document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
+        async function renameItem() {
+            const n = prompt("Nama baru:", selectedName);
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'RENAME', id:selectedId, newName:n})});
+                loadData();
+            }
+        }
+        async function deleteItem() {
+            if (confirm("Hapus?")) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'MOVE_TO_TRASH', id:selectedId})});
+                loadData();
+            }
+        }
 
         init();
-        // Panggil fungsi pertama kali saat halaman dibuka
-        loadData();
     </script>
 </body>
 </html>
