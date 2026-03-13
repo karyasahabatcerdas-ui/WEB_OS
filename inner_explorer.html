@@ -67,6 +67,8 @@
         let activeFolderId = params.get('folderId') || ""; 
         let lastParentId = ""; 
         let loadedNodes = {}; 
+        // Tambahkan baris ini di paling atas <script> (di luar fungsi) sebagai database urutan folder
+        let pathStack = []; 
 
         // 1. INITIALIZE OS EXPLORER
         async function init() {
@@ -91,42 +93,59 @@
                 </div>`;
         }
 
-        async function toggleFolder(id, name, element) {
-            const subTree = document.getElementById(`sub-${id}`);
-            const expander = element.querySelector('.expander');
 
-            // Set Active State
-            document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
-            element.classList.add('active');
-            activeFolderId = id;
 
-            // Fetch data jika belum pernah diload
-            if (!loadedNodes[id]) {
-                expander.innerHTML = "⌛";
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
+            async function toggleFolder(id, name, element) {
+                const subTree = document.getElementById(`sub-${id}`);
+                const expander = element.querySelector('.expander');
+
+                // === LOGIKA BREADCRUMB BERJENJANG ===
+                // 1. Cek apakah folder ini sudah ada di tumpukan (stack)
+                const folderIndex = pathStack.findIndex(item => item.id === id);
                 
-                // Render sub-folders di tree (kiri)
-                subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name)).join('');
-                loadedNodes[id] = true;
+                if (folderIndex === -1) {
+                    // Jika folder baru, tambahkan ke urutan paling belakang
+                    pathStack.push({ id: id, name: name });
+                } else {
+                    // Jika klik folder yang sudah ada di atasnya (navigasi mundur), potong sisa jalurnya
+                    pathStack = pathStack.slice(0, folderIndex + 1);
+                }
                 
-                // Render isi di main pane (kanan)
-                renderMainContent(data);
-            } else {
-                // Jika sudah ada, tinggal refresh tampilan kanan saja
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-                renderMainContent(data);
+                // 2. Gabungkan semua nama folder di stack untuk ditampilkan di Address Bar
+                const fullPath = pathStack.map(item => item.name).join(' / ');
+                document.getElementById('path-input').value = `Root / ${fullPath}`;
+                // ===================================
+
+                // Set Active State (Warna Biru di Sidebar)
+                document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
+                element.classList.add('active');
+                activeFolderId = id;
+
+                // Fetch data jika belum pernah diload (Lazy Loading)
+                if (!loadedNodes[id]) {
+                    expander.innerHTML = "⌛"; // Loading indicator
+                    const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                    const data = await res.json();
+                    
+                    // Render sub-folders di tree (panel kiri)
+                    subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name)).join('');
+                    loadedNodes[id] = true;
+                    
+                    // Render isi file/folder di main pane (panel kanan)
+                    renderMainContent(data);
+                } else {
+                    // Jika sudah pernah dibuka, cukup ambil data terbaru untuk panel kanan (Refresh)
+                    const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                    const data = await res.json();
+                    renderMainContent(data);
+                }
+
+                // Toggle Expand/Collapse (Animasi Panah ▶)
+                const isOpening = !subTree.classList.contains('show');
+                subTree.classList.toggle('show', isOpening);
+                expander.classList.toggle('open', isOpening);
+                expander.innerHTML = "▶";
             }
-
-            // Toggle Expand/Collapse
-            const isOpening = !subTree.classList.contains('show');
-            subTree.classList.toggle('show', isOpening);
-            expander.classList.toggle('open', isOpening);
-            expander.innerHTML = "▶";
-
-            document.getElementById('path-input').value = `Root / ${name}`;
-        }
 
         // 3. MAIN CONTENT LOGIC (DETAILS)
         function renderMainContent(data) {

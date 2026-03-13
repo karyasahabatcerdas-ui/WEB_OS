@@ -149,28 +149,31 @@
     }
 
     // === 2. WINDOW MANAGER ===
-    function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
-        windowCount++;
-        const winId = `win-${windowCount}`;
-        const appId = `app-${winId}`;
+        function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
+            if (sessionStorage.getItem("isAuth") !== "true") return;
+            windowCount++;
+            const winId = `win-${windowCount}`;
+            const appId = `app-${winId}`;
 
-        const winHtml = `
-            <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')">
-                <div class="win-header" onmousedown="dragWin(this.parentElement)">
-                    <span>📁 ${title}</span>
-                    <div class="win-controls">
-                        <button onclick="minimizeWin('${winId}')">_</button>
-                        <button onclick="closeWin('${winId}', '${appId}')">×</button>
+            const winHtml = `
+                <div id="${winId}" class="sub-window" style="top:80px; left:80px;" data-title="${title}" data-folderid="${folderId}" onmousedown="focusWin('${winId}')">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
+                        <span>📁 ${title}</span>
+                        <div class="win-controls">
+                            <button onclick="minimizeWin('${winId}')">_</button>
+                            <button onclick="closeWin('${winId}', '${appId}')">×</button>
+                        </div>
                     </div>
-                </div>
-                <div class="win-body">
-                    <iframe src="inner_explorer.html?folderId=${folderId}" id="frame-${winId}" style="width:100%; height:100%; border:none;"></iframe>
-                </div>
-            </div>`;
-        
-        document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-        addToTaskbar(winId, appId, title);
-    }
+                    <div class="win-body">
+                        <!-- Tambahkan pName di URL iframe agar inner_explorer tahu nama foldernya -->
+                        <iframe src="inner_explorer.html?folderId=${folderId}&pName=${encodeURIComponent(title)}" id="frame-${winId}" style="width:100%; height:100%; border:none;"></iframe>
+                    </div>
+                </div>`;
+            
+            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+            addToTaskbar(winId, appId, title);
+        }
+
 
     function addToTaskbar(winId, appId, title) {
         const taskbarApps = document.getElementById('taskbar-apps');
@@ -259,34 +262,54 @@
     }
 
     // === 4. CLOUD HIBERNATE (SAVE SESSION) ===
-    async function saveCloudSession() {
-        const windows = [];
-        document.querySelectorAll('.sub-window').forEach(win => {
-            windows.push({
-                id: win.id,
-                top: win.style.top,
-                left: win.style.left,
-                title: win.querySelector('.win-header span').innerText
-            });
-        });
-        await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) });
-        alert("Session Saved to Cloud!");
-    }
+        async function saveCloudSession() {
+            const windows = [];
+            document.querySelectorAll('.sub-window').forEach(win => {
+                // Ambil folderId terbaru dari iframe jika memungkinkan
+                const iframe = win.querySelector('iframe');
+                const currentUrl = new URL(iframe.contentWindow.location.href);
+                const folderId = currentUrl.searchParams.get('folderId') || ROOT_ID;
+                const pName = currentUrl.searchParams.get('pName') || "Explorer";
 
-    async function restoreCloudSession() {
-          try {
-        const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
-        const windows = await res.json();
-         // Cek apakah windows beneran Array, jika tidak (kosong/error), jangan diproses
-        if (windows && Array.isArray(windows)) {
-            windows.forEach(w => {
-                createNewExplorer(ROOT_ID, w.title || "Explorer");
+                windows.push({
+                    id: win.id,
+                    top: win.style.top,
+                    left: win.style.left,
+                    title: pName,
+                    folderId: folderId
+                });
             });
+
+            // Kirim ke GAS
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) 
+            });
+            alert("Desktop state hibernated to Cloud! ☁️");
         }
-           } catch (e) {
-            console.log("Sesi cloud kosong atau belum dibuat.");
+
+
+        async function restoreCloudSession() {
+            try {
+                const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
+                const windows = await res.json();
+                
+                if (windows && Array.isArray(windows)) {
+                    windows.forEach(w => {
+                        // Buat jendela dengan posisi dan folder yang tersimpan
+                        createNewExplorer(w.folderId, w.title);
+                        const newWin = document.getElementById(`win-${windowCount}`);
+                        if(newWin) {
+                            newWin.style.top = w.top;
+                            newWin.style.left = w.left;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log("No saved session found.");
             }
         }
+
     // === 5. KEYBOARD SHORTCUTS ===
     window.addEventListener('keydown', (e) => {
         if (e.altKey && e.key === 'n') createNewExplorer();
@@ -294,6 +317,13 @@
         if (e.altKey && e.key === 's') saveCloudSession();
         if (e.altKey && e.key === 'l') document.getElementById('login-screen').style.display = 'flex';
         if (e.ctrlKey && e.shiftKey && e.key === 'Escape') toggleTaskManager();
+    });
+
+    window.addEventListener('message', function(e) {
+        // Jika ada pesan dari iframe (inner_explorer)
+        if (e.data.action === 'focus_me') {
+            focusWin(e.data.id);
+        }
     });
 
     // === HELPERS ===
