@@ -74,6 +74,7 @@
         <input type="text" id="path-input" placeholder="Search..." onkeyup="filterList()">
         <!-- PASTIKAN BARIS DI BAWAH INI ADA -->
         <div id="status" style="font-size: 10px; color: #888; margin-left: 10px;">Ready</div>
+        <button onclick="loadData(lastParentId)">⬅️ Back</button>
     </div>
 
 
@@ -83,10 +84,12 @@
         const params = new URLSearchParams(window.location.search);
         let activeFolderId = params.get('folderId') || ""; 
         let currentFolderName = params.get('pName') || "Home Root";
+        let externalRoots = []; // Inisialisasi agar tidak "undefined"
         let lastParentId = ""; 
         let loadedNodes = {}; 
         // Tambahkan baris ini di paling atas <script> (di luar fungsi) sebagai database urutan folder
-        let pathStack = []; 
+        let pathStack = [{ id: activeFolderId, name: currentFolderName }]; 
+        let selectedId = null, selectedName = "";
 
         // 1. INITIALIZE OS EXPLORER
         async function init() {
@@ -356,29 +359,36 @@
             }
         }
 
+
         async function loadData(id = activeFolderId) {
-            // 1. Update status folder aktif
             activeFolderId = id;
             const statusEl = document.getElementById('status');
             if (statusEl) statusEl.innerText = "Loading...";
 
             try {
-                // 2. Ambil data External Roots (Drive Lain) jika belum ada di memori
+                // --- 1. Ambil Data Pohon & File ---
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+
+                // --- 2. UPDATE BREADCRUMB DULU (Supaya pathStack terbaru) ---
+                updateBreadcrumb(id, data.name);
+
+                // --- 3. HITUNG lastParentId (Setelah pathStack di-update) ---
+                if (pathStack.length > 1) {
+                    lastParentId = pathStack[pathStack.length - 2].id;
+                } else {
+                    lastParentId = ""; // Kembali ke root utama
+                }
+
+                // --- 4. Ambil Roots Eksternal ---
                 if (externalRoots.length === 0) {
                     const rRes = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
                     const rData = await rRes.json();
                     externalRoots = Array.isArray(rData) ? rData : [];
                 }
 
-                // 3. Ambil Struktur Folder & File dari folder yang diklik
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-
-                // 4. Update Tampilan (Kiri & Kanan)
+                // --- 5. Render UI ---
                 render(data);
-                
-                // 5. Update Address Bar (Breadcrumb)
-                updateBreadcrumb(id, data.name);
 
                 if (statusEl) statusEl.innerText = "Done";
             } catch (err) {
@@ -386,6 +396,7 @@
                 if (statusEl) statusEl.innerText = "Error!";
             }
         }
+
 
         // Fungsi pembantu buat update Address Bar
         function updateBreadcrumb(id, name) {
