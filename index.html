@@ -35,6 +35,7 @@
 </head>
 <body>
 
+    <!-- 1. Login Screen -->
     <div id="login-screen" class="login-screen">
         <h2>WEB_OS Login</h2>
         <form onsubmit="event.preventDefault(); attemptLogin();" style="display:flex; flex-direction:column; align-items:center;">
@@ -43,27 +44,39 @@
         </form>
     </div>
 
-    <div id="desktop" oncontextmenu="showDesktopCtx(event)"></div>
+    <!-- 2. Desktop Area (Cukup SATU saja) -->
+    <div id="desktop" style="width: 100vw; height: calc(100vh - 50px); position: relative; background: url('https://images.unsplash.com') center/cover;" oncontextmenu="showDesktopCtx(event)">
+        
+        <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
+        <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
+            <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
+            <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
+            <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
+            <hr>
+            <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate</div>
+            <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
+        </div>
 
-    <div id="start-menu">
-        <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
-        <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
-        <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
-        <hr>
-        <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate</div>
-        <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
+        <!-- Desktop Context Menu -->
+        <div id="ctx-desktop" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px;">
+            <div class="menu-item" onclick="createNewExplorer()"><i class="fas fa-folder-plus"></i> New Explorer</div>
+            <div class="menu-item" onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
+        </div>
+
     </div>
 
+    <!-- 3. Taskbar (Di luar desktop area) -->
     <div class="taskbar">
-        <div class="start-btn" onclick="toggleStartMenu()"><i class="fab fa-windows"></i> Start</div>
+        <div class="start-btn" onclick="event.stopPropagation(); toggleStartMenu()">
+            <i class="fab fa-windows"></i> Start
+        </div>
         <div id="taskbar-apps" style="display:flex; flex:1; gap:10px; padding:0 15px;"></div>
-        <div id="clock" onclick="openQuickSettings()" style="padding-right:20px; cursor:pointer; font-weight:bold;">00:00</div>
+        <div id="clock" onclick="openQuickSettings()" style="padding-right:20px; cursor:pointer; font-weight:bold; color:var(--text-main);">00:00</div>
     </div>
 
-    <div id="ctx-desktop">
-        <div class="menu-item" onclick="createNewExplorer()"><i class="fas fa-folder-plus"></i> New Explorer</div>
-        <div class="menu-item" onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
-    </div>
+    <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
+
+
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwEKOwPXtlJYFbWrEpm5n0mjsFROUzfBS3FQvbYMH5t3secOLTIm4y5ojdzIJigfEK6/exec";
