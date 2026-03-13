@@ -3,310 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <title>WEB_OS | Private Cloud Desktop</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- FontAwesome untuk Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
+    <!-- Monaco Editor Loader -->
     <script src="https://cdnjs.cloudflare.com"></script>
 
-
-
     <style>
-        :root {
-            --bg-panel: rgba(255, 255, 255, 0.7);
-            --text-main: #333;
-            --accent: #007bff;
-            --border: rgba(0,0,0,0.1);
-        }
-        [data-theme="dark"] {
-            --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1);
-        }
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        :root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }
+        [data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #2c3e50; }
         #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }
         
-        /* Taskbar */
-        .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
-        .start-btn { cursor: pointer; padding: 5px 15px; }
+        .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
+        .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
+        .start-btn:hover { background: rgba(0,0,0,0.1); }
 
-        /* Window Style */
-        .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; resize: both; }
-        .win-header { padding: 10px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); }
-        .win-body { flex: 1; overflow: hidden; }
+        .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }
+        .win-header { padding: 10px 15px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: bold; }
+        .win-body { flex: 1; overflow: hidden; background: white; }
+        .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }
 
-        /* Login Screen */
         .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
+        
+        #start-menu { position: absolute; bottom: 55px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px; }
+        .menu-item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-radius: 8px; color: #333; }
+        .menu-item:hover { background: #f0f0f0; color: var(--accent); }
 
-
-        /* Pastikan saat resize, iframe tidak menangkap kursor */
-        .sub-window[style*="width"] iframe, 
-        .sub-window[style*="height"] iframe {
-            pointer-events: auto;
-        }
-        /* Tambahkan ini agar saat dragging lancar */
-        .dragging iframe {
-            pointer-events: none !important;
-        }
-
+        #ctx-desktop { position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px; }
     </style>
 </head>
-<body data-theme="light">
+<body>
 
-    <!-- Login Screen -->
     <div id="login-screen" class="login-screen">
         <h2>WEB_OS Login</h2>
-
-        <!-- Masukkan input ke dalam form agar browser senang -->
         <form onsubmit="event.preventDefault(); attemptLogin();" style="display:flex; flex-direction:column; align-items:center;">
-            <input type="password" id="login-pass" placeholder="Password" style="padding:10px; border-radius:5px; border:none;">
-            <button type="submit" style="margin-top:10px; padding:5px 20px; cursor:pointer;">Unlock</button>
+            <input type="password" id="login-pass" placeholder="Password" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
+            <button type="submit" style="margin-top:15px; padding:8px 30px; border-radius:20px; border:none; background:var(--accent); color:white; cursor:pointer;">Unlock</button>
         </form>
-
     </div>
 
-    <!-- Desktop Area -->
-    <div id="desktop"></div>
-    <!-- Modal Preview Gambar -->
-    <div id="preview-modal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()" style="max-width:80%; max-height:80%; background:none; border:none; display:flex; flex-direction:column; align-items:center;">
-            <span onclick="document.getElementById('preview-modal').style.display='none'" style="position:absolute; top:-30px; right:0; color:white; font-size:30px; cursor:pointer;">&times;</span>
-            <img id="preview-img" src="" style="max-width:100%; max-height:70vh; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.5);">
-            <p id="preview-title" style="color:white; margin-top:15px; font-weight:bold;"></p>
-        </div>
-    </div>
+    <div id="desktop" oncontextmenu="showDesktopCtx(event)"></div>
 
-
-    <!-- Start Menu Panel (Melayang di atas tombol Start) -->
-    <div id="start-menu" class="start-menu-panel" style="display:none; position:absolute; bottom:55px; left:10px; width:300px; background:var(--bg-panel); backdrop-filter:blur(20px); border-radius:12px; border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:10001; padding:15px;">
-        <div style="font-weight:bold; margin-bottom:10px; opacity:0.7; font-size:12px;">APPLICATIONS</div>
+    <div id="start-menu">
         <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
         <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
         <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
-        <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
-        <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate (Save)</div>
+        <hr>
+        <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate</div>
         <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
     </div>
-    <style>
-        .menu-item { padding: 10px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 12px; color: var(--text-main); transition: 0.2s; }
-        .menu-item:hover { background: rgba(0,123,255,0.1); color: var(--accent); }
-        .menu-item i { width: 20px; text-align: center; }
-    </style>
 
-    <!-- Taskbar Utama -->
     <div class="taskbar">
-        <!-- Tombol Start (Membuka Menu, bukan langsung Window) -->
-        <div class="start-btn" onclick="toggleStartMenu()">
-            <i class="fab fa-windows"></i> Start
-        </div>
-
-        <!-- Tempat Ikon Jendela yang sedang aktif (Minimize/Restore) -->
+        <div class="start-btn" onclick="toggleStartMenu()"><i class="fab fa-windows"></i> Start</div>
         <div id="taskbar-apps" style="display:flex; flex:1; gap:10px; padding:0 15px;"></div>
-
-        <!-- Jam & Quick Settings -->
-        <div class="clock" id="clock" onclick="openQuickSettings()" style="padding-right:15px; cursor:pointer;">
-            00:00
-        </div>
+        <div id="clock" onclick="openQuickSettings()" style="padding-right:20px; cursor:pointer; font-weight:bold;">00:00</div>
     </div>
 
-
-    <!-- Bagian Body & Layout Utama -->
-    <div id="desktop" oncontextmenu="showDesktopCtx(event)"></div>
-
-    <!-- Start Menu (List Program) -->
-    <div id="start-menu" class="start-menu">
-        <div class="search-bar"><input type="text" id="global-search" placeholder="Search Drive..." onkeypress="doGlobalSearch(event)"></div>
-        <div class="menu-list">
-            <div onclick="createNewExplorer()"><i class="fas fa-folder"></i> Explorer</div>
-            <div onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
-            <div onclick="openTrash()"><i class="fas fa-trash"></i> Trash Bin</div>
-            <div onclick="openQuickSettings()"><i class="fas fa-cog"></i> Settings</div>
-        </div>
+    <div id="ctx-desktop">
+        <div class="menu-item" onclick="createNewExplorer()"><i class="fas fa-folder-plus"></i> New Explorer</div>
+        <div class="menu-item" onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
     </div>
-
-    <div id="ctx-desktop" style="display:none; position:absolute; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:9999; padding:5px; min-width:160px;">
-    <div class="menu-item" onclick="createNewExplorer()">📁 New Explorer</div>
-    <div class="menu-item" onclick="openTerminal()">>_ Open Terminal</div>
-    <div class="menu-item" onclick="openQuickSettings()">⚙️ Personalize</div>
-    </div>
-
 
     <script>
-
-    // === CONFIGURATION ===
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEKOwPXtlJYFbWrEpm5n0mjsFROUzfBS3FQvbYMH5t3secOLTIm4y5ojdzIJigfEK6/exec";
+        const GAS_URL = "https://script.google.com";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
-        const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
+        const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e";
+        
         let windowCount = 0;
+        let editors = {};
 
-        let pinnedApps = [];
-        let historyStack = [];
+        async function sha256(str) {
+            const buf = new TextEncoder().encode(str);
+            const hash = await crypto.subtle.digest('SHA-256', buf);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-    // === 1. SECURITY & AUTH ===
-    async function sha256(str) {
-        const buf = new TextEncoder().encode(str);
-        const hash = await crypto.subtle.digest('SHA-256', buf);
-        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+        async function attemptLogin() {
+            const input = document.getElementById('login-pass').value;
+            if (await sha256(input) === STORED_HASH) {
+                document.getElementById('login-screen').style.display = 'none';
+                sessionStorage.setItem("isAuth", "true");
+                initOS();
+            } else { alert("Akses Ditolak!"); }
+        }
 
-    async function attemptLogin() {
-        const input = document.getElementById('login-pass').value;
-        const hashed = await sha256(input);
-        if (hashed === STORED_HASH) {
-            document.getElementById('login-screen').style.display = 'none';
-            sessionStorage.setItem("isAuth", "true");
-            initOS();
-        } else { alert("Akses Ditolak, Bro!"); }
-    }
+        function initOS() {
+            updateClock(); setInterval(updateClock, 1000);
+            restoreCloudSession();
+        }
 
-    // Ganti fungsi initOS lama dengan ini
-    function initOS() {
-        updateClock();
-        setInterval(updateClock, 1000);
-        restoreCloudSession(); 
-        // loadPinnedApps(); // Komentari dulu jika belum ada fungsinya agar tidak error
-    }
-
-    // === 2. WINDOW MANAGER ===
         function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
-            if (sessionStorage.getItem("isAuth") !== "true") return;
             windowCount++;
             const winId = `win-${windowCount}`;
             const appId = `app-${winId}`;
-
             const winHtml = `
-                <div id="${winId}" class="sub-window" style="top:80px; left:80px;" data-title="${title}" data-folderid="${folderId}" onmousedown="focusWin('${winId}')">
+                <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')">
                     <div class="win-header" onmousedown="dragWin(this.parentElement)">
                         <span>📁 ${title}</span>
                         <div class="win-controls">
-                            <button onclick="minimizeWin('${winId}')">_</button>
                             <button onclick="closeWin('${winId}', '${appId}')">×</button>
                         </div>
                     </div>
                     <div class="win-body">
-                        <!-- Tambahkan pName di URL iframe agar inner_explorer tahu nama foldernya -->
-                        <iframe src="inner_explorer.html?folderId=${folderId}&pName=${encodeURIComponent(title)}" id="frame-${winId}" style="width:100%; height:100%; border:none;"></iframe>
+                        <iframe src="inner_explorer.html?folderId=${folderId}&pName=${encodeURIComponent(title)}" style="width:100%; height:100%; border:none;"></iframe>
                     </div>
                 </div>`;
-            
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
             addToTaskbar(winId, appId, title);
         }
-
-
-    function addToTaskbar(winId, appId, title) {
-        const taskbarApps = document.getElementById('taskbar-apps');
-        const icon = `
-            <div id="${appId}" class="task-btn active" onclick="toggleMinimize('${winId}')" 
-                style="padding: 5px 10px; background: rgba(0,0,0,0.1); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                <i class="fas fa-folder" style="font-size: 14px; color: #f39c12;"></i>
-                <span style="font-size: 11px;">${title}</span>
-            </div>`;
-        taskbarApps.insertAdjacentHTML('beforeend', icon);
-    }
-
-    function handleFileOpen(file) {
-        const mime = file.mime || "";
-        const name = file.name;
-        const id = file.id;
-
-        if (mime.includes('image')) {
-            const modal = document.getElementById('preview-modal');
-            const img = document.getElementById('preview-img');
-            const title = document.getElementById('preview-title');
-            
-            // Gunakan URL thumbnail Google Drive untuk preview cepat
-            img.src = `https://drive.google.com{id}`;
-            title.innerText = name;
-            modal.style.display = 'flex';
-        } else {
-            // Jika bukan gambar, buka di tab baru (atau nanti kita tambah editor)
-            window.open(`https://drive.google.com{id}`);
-        }
-    }
-
-
-    function toggleMinimize(winId) {
-        const win = document.getElementById(winId);
-        const appId = `app-${winId}`;
-        const btn = document.getElementById(appId);
-        
-        if (win.style.display === 'none') {
-            win.style.display = 'flex';
-            btn.classList.add('active');
-            focusWin(winId);
-        } else {
-            win.style.display = 'none';
-            btn.classList.remove('active');
-        }
-    }
-
-    function dragWin(el) {
-        let p1=0, p2=0, p3=0, p4=0;
-        el.onmousedown = (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            focusWin(el.id);
-            p3=e.clientX; p4=e.clientY;
-            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; checkSnap(el); };
-            document.onmousemove = (e) => {
-                p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
-                el.style.top = (el.offsetTop - p2) + "px";
-                el.style.left = (el.offsetLeft - p1) + "px";
-            };
-        };
-    }
-
-    function minimizeWin(id) {
-        const win = document.getElementById(id);
-        win.style.display = 'none';
-        // Matikan status active di taskbar
-        const appId = `app-${id}`;
-        document.getElementById(appId).classList.remove('active');
-    }
-
-
-    function focusWin(id) {
-        document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
-        document.getElementById(id).style.zIndex = "100";
-    }
-
-    function closeWin(id, appId) {
-        document.getElementById(id).remove();
-        document.getElementById(appId).remove();
-    }
-
-    // === 3. TERMINAL ENGINE ===
-    async function openTerminal() {
-        const winId = `term-${Date.now()}`;
-        const html = `
-            <div id="${winId}" class="sub-window" style="width:500px; height:300px; background:#000; color:#0f0;">
-                <div class="win-header" style="background:#333; color:#fff;"><span>>_ Terminal</span><button onclick="this.closest('.sub-window').remove()">X</button></div>
-                <div class="win-body" style="padding:10px; font-family:monospace; overflow-y:auto;">
-                    <div id="out-${winId}">Welcome to WEB_OS Terminal. Type 'help' for commands.</div>
-                    <div style="display:flex"><span>$ &nbsp;</span><input type="text" onkeypress="execTerm(event, this, '${winId}')" style="background:none; border:none; color:#0f0; outline:none; flex:1; font-family:inherit;"></div>
-                </div>
-            </div>`;
-        document.getElementById('desktop').insertAdjacentHTML('beforeend', html);
-    }
-
-    async function execTerm(e, input, winId) {
-        if (e.key === 'Enter') {
-            const cmd = input.value.trim();
-            const out = document.getElementById(`out-${winId}`);
-            out.innerHTML += `<div>$ ${cmd}</div>`;
-            input.value = "";
-            
-            if (cmd === 'quota') {
-                const res = await fetch(`${GAS_URL}?action=GET_DRIVE_INFO`);
-                const info = await res.json();
-                out.innerHTML += `<div>Storage: ${(info.used/(1024**3)).toFixed(2)}GB used.</div>`;
-            } else if (cmd === 'help') {
-                out.innerHTML += `<div>Commands: quota, help, clear, neofetch</div>`;
-            } else if (cmd === 'clear') {
-                out.innerHTML = "";
-            } else {
-                out.innerHTML += `<div>Command not found.</div>`;
-            }
-        }
-    }
-    // Fungsi untuk membuka Editor Monaco di Sub-Window
-        let editors = {}; // Untuk simpan instance editor agar bisa di-save
 
         function openEditor(fileId, fileName) {
             const winId = `edit-${Date.now()}`;
@@ -323,251 +128,105 @@
                 </div>`;
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 
-            // LOAD MONACO DARI CDN (Metode paling stabil untuk GitHub Pages)
-            if (typeof require === "undefined") {
-                const loader = document.createElement('script');
-                loader.src = "https://cdnjs.cloudflare.com";
-                loader.onload = () => initMonaco(winId, fileId, fileName);
-                document.head.appendChild(loader);
-            } else {
-                initMonaco(winId, fileId, fileName);
-            }
-        }
-
-        // Gunakan fungsi init ini (PASTI JALAN di GitHub Pages)
-        function initMonaco(winId, fileId, fileName) {
             require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com' } });
-            
-            window.require(['vs/editor/editor.main'], async function() {
-                try {
-                    const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
-                    const data = await res.json();
-                    
-                    const ext = fileName.split('.').pop().toLowerCase();
-                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python' };
+            require(['vs/editor/editor.main'], async function() {
+                const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
+                const data = await res.json();
+                const ext = fileName.split('.').pop().toLowerCase();
+                const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json' };
 
-                    editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
-                        value: data.content || "",
-                        language: langMap[ext] || 'plaintext',
-                        theme: 'vs-dark',
-                        automaticLayout: true
-                    });
-                } catch (e) {
-                    console.error("Monaco Load Error:", e);
-                }
+                editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
+                    value: data.content || "",
+                    language: langMap[ext] || 'plaintext',
+                    theme: 'vs-dark',
+                    automaticLayout: true
+                });
             });
         }
-
-
-
 
         async function saveFileContent(winId, fileId) {
             const content = editors[winId].getValue();
-            const res = await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "SAVE_FILE_CONTENT", id: fileId, content: content })
-            });
-            alert("File Saved to Cloud! ☁️");
+            await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "SAVE_FILE_CONTENT", id: fileId, content: content }) });
+            alert("Saved!");
         }
 
-
-        async function startMonaco(winId, fileId) {
-            require.config({ paths: { vs: 'https://cdnjs.cloudflare.com' } });
-            require(['vs/editor/editor.main'], async function () {
-                const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
-                const data = await res.json();
-
-                // Tentukan bahasa berdasarkan ekstensi
-                const ext = data.name.split('.').pop();
-                const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'py': 'python' };
-                
-                window[`editor_${winId}`] = monaco.editor.create(document.getElementById(`monaco-${winId}`), {
-                    value: data.content,
-                    language: langMap[ext] || 'plaintext',
-                    theme: 'vs-dark'
-                });
-            });
+        function handleFileOpen(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['js', 'html', 'css', 'txt', 'json'].includes(ext)) openEditor(file.id, file.name);
+            else window.open(`https://drive.google.com{file.id}`);
         }
 
-        async function saveFile(winId, fileId) {
-            const content = window[`editor_${winId}`].getValue();
-            await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "SAVE_FILE_CONTENT", id: fileId, content: content })
-            });
-            alert("File Saved! 💾");
+        function addToTaskbar(winId, appId, title) {
+            const icon = `<div id="${appId}" onclick="focusWin('${winId}')" style="padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; font-size: 12px;"><i class="fas fa-folder"></i> ${title}</div>`;
+            document.getElementById('taskbar-apps').insertAdjacentHTML('beforeend', icon);
         }
 
-    // === 4. CLOUD HIBERNATE (SAVE SESSION) ===
+        function dragWin(el) {
+            el.onmousedown = (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                focusWin(el.id);
+                document.querySelectorAll('iframe').forEach(i => i.style.pointerEvents = 'none');
+                let p3 = e.clientX, p4 = e.clientY;
+                document.onmousemove = (e) => {
+                    el.style.top = (el.offsetTop - (p4 - e.clientY)) + "px";
+                    el.style.left = (el.offsetLeft - (p3 - e.clientX)) + "px";
+                    p3 = e.clientX; p4 = e.clientY;
+                };
+                document.onmouseup = () => {
+                    document.onmousemove = null;
+                    document.querySelectorAll('iframe').forEach(i => i.style.pointerEvents = 'auto');
+                };
+            };
+        }
+
+        function focusWin(id) {
+            document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
+            document.getElementById(id).style.zIndex = "100";
+        }
+
+        function closeWin(id, appId) {
+            document.getElementById(id).remove();
+            document.getElementById(appId).remove();
+        }
+
+        function toggleStartMenu() {
+            const m = document.getElementById('start-menu');
+            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showDesktopCtx(e) {
+            e.preventDefault();
+            const m = document.getElementById('ctx-desktop');
+            m.style.display = 'block'; m.style.left = e.pageX + 'px'; m.style.top = e.pageY + 'px';
+        }
+
         async function saveCloudSession() {
             const windows = [];
             document.querySelectorAll('.sub-window').forEach(win => {
-                // Ambil folderId terbaru dari iframe jika memungkinkan
                 const iframe = win.querySelector('iframe');
-                const currentUrl = new URL(iframe.contentWindow.location.href);
-                const folderId = currentUrl.searchParams.get('folderId') || ROOT_ID;
-                const pName = currentUrl.searchParams.get('pName') || "Explorer";
-
-                windows.push({
-                    id: win.id,
-                    top: win.style.top,
-                    left: win.style.left,
-                    title: pName,
-                    folderId: folderId
-                });
+                if (iframe) {
+                    const url = new URL(iframe.src);
+                    windows.push({ top: win.style.top, left: win.style.left, title: url.searchParams.get('pName'), folderId: url.searchParams.get('folderId') });
+                }
             });
-
-            // Kirim ke GAS
-            await fetch(GAS_URL, { 
-                method: "POST", 
-                body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) 
-            });
-            alert("Desktop state hibernated to Cloud! ☁️");
+            await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) });
+            alert("Hibernated!");
         }
-
 
         async function restoreCloudSession() {
-            try {
-                const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
-                const windows = await res.json();
-                
-                if (windows && Array.isArray(windows)) {
-                    windows.forEach(w => {
-                        // Buat jendela dengan posisi dan folder yang tersimpan
-                        createNewExplorer(w.folderId, w.title);
-                        const newWin = document.getElementById(`win-${windowCount}`);
-                        if(newWin) {
-                            newWin.style.top = w.top;
-                            newWin.style.left = w.left;
-                        }
-                    });
-                }
-            } catch (e) {
-                console.log("No saved session found.");
-            }
+            const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
+            const windows = await res.json();
+            if (Array.isArray(windows)) windows.forEach(w => createNewExplorer(w.folderId, w.title));
         }
 
-    // === 5. KEYBOARD SHORTCUTS ===
-    window.addEventListener('keydown', (e) => {
-        if (e.altKey && e.key === 'n') createNewExplorer();
-        if (e.altKey && e.key === 't') openTerminal();
-        if (e.altKey && e.key === 's') saveCloudSession();
-        if (e.altKey && e.key === 'l') document.getElementById('login-screen').style.display = 'flex';
-        if (e.ctrlKey && e.shiftKey && e.key === 'Escape') toggleTaskManager();
-    });
-
-    window.addEventListener('message', function(e) {
-        // Jika ada pesan dari iframe (inner_explorer)
-        if (e.data.action === 'focus_me') {
-            focusWin(e.data.id);
+        function updateClock() {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
-    });
 
-    // === HELPERS ===
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    }
-    
-// Membuka/Menutup Start Menu
-function toggleStartMenu() {
-    const menu = document.getElementById('start-menu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-}
-
-function handleFileOpen(file) {
-    const name = file.name.toLowerCase();
-    const ext = name.split('.').pop();
-    const codeExts = ['js', 'html', 'css', 'txt', 'json', 'py'];
-
-    if (codeExts.includes(ext)) {
-        openEditor(file.id, file.name); // Buka Editor
-    } else if (file.mime.includes('image')) {
-        openPreview(file); // Buka Gambar
-    } else {
-        window.open(`https://drive.google.com{file.id}`); // Download/View Biasa
-    }
-}
-
-
-// Membuka Jendela Quick Settings (Info Drive Asli)
-async function openQuickSettings() {
-    // Kita buat jendela baru khusus settings
-    const winId = `settings-${Date.now()}`;
-    
-    // Ambil data kuota asli dari GAS
-    const res = await fetch(`${GAS_URL}?action=GET_DRIVE_INFO`);
-    const info = await res.json();
-    
-    const usedGB = (info.used / (1024**3)).toFixed(2);
-    const limitGB = (info.limit / (1024**3)).toFixed(2);
-    const percent = Math.round((info.used / info.limit) * 100);
-
-    const winHtml = `
-        <div id="${winId}" class="sub-window" style="width:300px; height:auto; top:100px; right:50px;">
-            <div class="win-header" onmousedown="dragWin(this.parentElement)">
-                <span>⚙️ Settings & Info</span>
-                <button onclick="document.getElementById('${winId}').remove()">×</button>
-            </div>
-            <div class="win-body" style="padding:20px; background:var(--bg-panel); color:var(--text-main);">
-                <div style="font-size:12px; margin-bottom:5px;">Storage: ${usedGB} GB / ${limitGB} GB</div>
-                <div style="width:100%; background:#ddd; height:8px; border-radius:4px; overflow:hidden;">
-                    <div style="width:${percent}%; background:var(--accent); height:100%;"></div>
-                </div>
-                <div style="font-size:10px; margin-top:5px; text-align:right;">${percent}% Used</div>
-                <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
-                <button onclick="document.getElementById('wallpaper-input').click()" style="width:100%; padding:8px; cursor:pointer;">🖼️ Change Wallpaper</button>
-            </div>
-        </div>`;
-    
-    document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-}
-
-
-function dragWin(el) {
-    let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-    
-    el.onmousedown = (e) => {
-        // Jangan drag kalau yang diklik itu tombol Close/Minimize atau Iframe
-        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'IFRAME') return;
-        
-        focusWin(el.id);
-        
-        // TRIK ANTI-STICKY: Pasang "kaca transparan" di atas semua iframe saat drag
-        document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'none');
-        
-        p3 = e.clientX;
-        p4 = e.clientY;
-        
-        document.onmouseup = () => {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            // Kembalikan interaksi iframe setelah dilepas
-            document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'auto');
-        };
-        
-        document.onmousemove = (e) => {
-            p1 = p3 - e.clientX;
-            p2 = p4 - e.clientY;
-            p3 = e.clientX;
-            p4 = e.clientY;
-            
-            // Gerakkan jendela sesuai pergerakan mouse
-            el.style.top = (el.offsetTop - p2) + "px";
-            el.style.left = (el.offsetLeft - p1) + "px";
-        };
-    };
-}
-
-
-
-// Klik di desktop untuk menutup start menu otomatis
-document.getElementById('desktop').addEventListener('click', () => {
-    document.getElementById('start-menu').style.display = 'none';
-    document.getElementById('ctx-desktop').style.display = 'none'; // Tutup klik kanan juga
-});
-
-</script>
-
+        window.onclick = () => {
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('ctx-desktop').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
