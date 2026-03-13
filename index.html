@@ -216,6 +216,15 @@
         };
     }
 
+    function minimizeWin(id) {
+        const win = document.getElementById(id);
+        win.style.display = 'none';
+        // Matikan status active di taskbar
+        const appId = `app-${id}`;
+        document.getElementById(appId).classList.remove('active');
+    }
+
+
     function focusWin(id) {
         document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
         document.getElementById(id).style.zIndex = "100";
@@ -385,29 +394,40 @@ async function openQuickSettings() {
 
 
 function dragWin(el) {
-    let p1=0, p2=0, p3=0, p4=0;
+    let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+    
     el.onmousedown = (e) => {
-        if (e.target.tagName === 'BUTTON') return;
+        // Jangan drag kalau yang diklik itu tombol Close/Minimize atau Iframe
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'IFRAME') return;
+        
         focusWin(el.id);
         
-        // TRIK: Matikan interaksi iframe saat drag agar tidak "sticky"
+        // TRIK ANTI-STICKY: Pasang "kaca transparan" di atas semua iframe saat drag
         document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'none');
         
-        p3=e.clientX; p4=e.clientY;
-        document.onmouseup = () => { 
-            document.onmouseup = null; 
-            document.onmousemove = null; 
-            // Hidupkan kembali interaksi iframe setelah lepas klik
+        p3 = e.clientX;
+        p4 = e.clientY;
+        
+        document.onmouseup = () => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            // Kembalikan interaksi iframe setelah dilepas
             document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'auto');
-            checkSnap(el); 
         };
+        
         document.onmousemove = (e) => {
-            p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
+            p1 = p3 - e.clientX;
+            p2 = p4 - e.clientY;
+            p3 = e.clientX;
+            p4 = e.clientY;
+            
+            // Gerakkan jendela sesuai pergerakan mouse
             el.style.top = (el.offsetTop - p2) + "px";
             el.style.left = (el.offsetLeft - p1) + "px";
         };
     };
 }
+
 
 
 // Klik di desktop untuk menutup start menu otomatis
