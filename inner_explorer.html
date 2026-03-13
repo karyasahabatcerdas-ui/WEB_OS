@@ -91,7 +91,6 @@
         <input type="text" id="path-input" readonly 
                style="flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace;">
     </div>
-
     <!-- Tambahkan ini di dalam div class="toolbar" -->
 <span id="status" style="font-size:10px; color:gray; margin-left:10px;">Ready</span>
 
@@ -134,17 +133,25 @@
 
 
         // 2. TREE LOGIC (RECURSIVE)
-        function createTreeNode(id, name, isRoot = false) {
+        function createTreeNode(id, name, isRoot = false, depth = 0) {
+            // Gunakan ternary operator '?' dan ':' (BUKAN '=')
+            const activeClass = (id === activeFolderId) ? 'active' : '';
+            const iconClass = isRoot ? 'fa-home' : 'fa-folder';
+            
             return `
                 <div class="tree-node" id="node-${id}">
-                    <div class="tree-row" onclick="toggleFolder('${id}', '${name}', this)">
+                    <div class="tree-row ${activeClass}" 
+                        onclick="toggleFolder('${id}', '${name}', this, ${depth})"
+                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')"
+                        data-depth="${depth}">
                         <span class="expander">▶</span>
-                        <i class="fas ${isRoot ? 'fa-home' : 'fa-folder'}"></i>
+                        <i class="fas ${iconClass}"></i>
                         <span>${name}</span>
                     </div>
                     <div class="sub-tree" id="sub-${id}"></div>
                 </div>`;
         }
+
 
         async function renameItem() {
             if (!selectedId) return;
@@ -238,33 +245,31 @@
         // 3. MAIN CONTENT LOGIC (DETAILS)
         function renderMainContent(data) {
             const list = document.getElementById('file-list');
+            if (!list) return;
             list.innerHTML = "";
 
-            // 1. RENDER FOLDERS (TAMBAHKAN oncontextmenu)
+            // Render Folder di Panel Kanan
             data.folders.forEach(f => {
                 list.innerHTML += `
-                    <div class="file-row" 
-                        onclick="syncAndOpen('${f.id}', '${f.name}')" 
-                        oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
+                    <div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
                         <div><i class="fas fa-folder"></i> ${f.name}</div>
                         <div style="color:#999">Folder</div>
                         <div style="color:#999">--</div>
                     </div>`;
             });
 
-            // 2. RENDER FILES (SUDAH ADA oncontextmenu)
+            // Render File di Panel Kanan
             data.files.forEach(f => {
                 const ext = f.name.split('.').pop().toUpperCase();
                 list.innerHTML += `
-                    <div class="file-row" 
-                        ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" 
-                        oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
+                    <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
                         <div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div>
                         <div style="color:#999">${ext} File</div>
                         <div style="color:#999">N/A</div>
                     </div>`;
             });
         }
+
 
         function createTreeNode(id, name, isRoot = false, depth = 0) {
             return `
