@@ -143,20 +143,26 @@
         }
 
         async function renameItem() {
-            const newName = prompt("Nama baru:", selectedName);
+            const newName = prompt("Masukkan nama baru:", selectedName);
             if (newName && newName !== selectedName) {
-                const statusEl = document.getElementById('status'); // Pastikan id="status" ada di toolbar
+                // Cek dulu apakah elemen status ada, jika tidak ada jangan dipaksa set innerText
+                const statusEl = document.getElementById('status');
                 if (statusEl) statusEl.innerText = "Renaming...";
                 
-                await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
-                });
-                
-                if (statusEl) statusEl.innerText = "Done";
-                loadData(activeFolderId);
+                try {
+                    await fetch(GAS_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
+                    });
+                    if (statusEl) statusEl.innerText = "Done";
+                    loadData(activeFolderId);
+                } catch (e) {
+                    alert("Gagal Rename!");
+                    if (statusEl) statusEl.innerText = "Error";
+                }
             }
         }
+
 
 
         async function deleteItem() {
