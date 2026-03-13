@@ -105,15 +105,25 @@
             if (externalRoots.length === 0) {
                 try {
                     const res = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
-                    externalRoots = await res.json();
-                } catch(e) { console.log("Roots kosong"); }
+                    const data = await res.json();
+                    // CEK: Jika data adalah array, pakai data tersebut. Jika tidak, jadikan array kosong.
+                    externalRoots = Array.isArray(data) ? data : [];
+                } catch(e) { 
+                    console.log("Gagal memuat roots, set ke kosong.");
+                    externalRoots = []; 
+                }
             }
 
-            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-            const data = await res.json();
-            render(data);
+            try {
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                render(data);
+            } catch (err) {
+                console.error("Gagal load tree:", err);
+            }
             document.getElementById('status').innerText = "Done";
         }
+
 
         function render(data) {
             const list = document.getElementById('file-list');
@@ -122,25 +132,27 @@
             side.innerHTML = "";
 
             // 1. RENDER EXTERNAL ROOTS (DRIVE LAIN)
-            // Ubah bagian render externalRoots di sidebar:
-            externalRoots.forEach(root => {
-                const div = document.createElement('div');
-                div.className = `side-item ${root.id === currentFolderId ? 'active' : ''}`;
-                div.innerHTML = `🌐 ${root.name}`;
-                div.onclick = () => window.location.href = `inner_explorer.html?folderId=${root.id}`;
-                
-                // TAMBAHKAN INI UNTUK UNPIN
-                div.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selectedRootId = root.id;
-                    const menu = document.getElementById('ctx-sidebar');
-                    menu.style.display = 'block';
-                    menu.style.left = e.pageX + 'px';
-                    menu.style.top = e.pageY + 'px';
-                };
-                side.appendChild(div);
-            });
+            // PROTEKSI: Pastikan externalRoots adalah array sebelum di-loop
+            if (externalRoots && Array.isArray(externalRoots)) {
+                externalRoots.forEach(root => {
+                    const div = document.createElement('div');
+                    div.className = `side-item ${root.id === currentFolderId ? 'active' : ''}`;
+                    div.innerHTML = `🌐 ${root.name}`;
+                    div.onclick = () => window.location.href = `inner_explorer.html?folderId=${root.id}`;
+                    
+                    // Context Menu untuk Unpin
+                    div.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectedRootId = root.id;
+                        const menu = document.getElementById('ctx-sidebar');
+                        menu.style.display = 'block';
+                        menu.style.left = e.pageX + 'px';
+                        menu.style.top = e.pageY + 'px';
+                    };
+                    side.appendChild(div);
+                });
+            }
 
             // 2. TOMBOL HOME ROOT (DRIVE UTAMA)
             const homeDiv = document.createElement('div');
@@ -295,7 +307,7 @@
                 menu.style.top = e.pageY + 'px';
             }
         };
-        
+
         // Tutup semua menu saat klik kiri di mana saja
         window.onclick = () => {
             document.getElementById('ctx-menu').style.display = 'none';
