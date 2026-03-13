@@ -61,6 +61,14 @@
         <div onclick="deleteItem()" style="color:red">Delete</div>
     </div>
 
+    <div id="ctx-empty" class="ctx-menu">
+        <div onclick="createNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</div>
+        <div onclick="createNewFile()"><i class="fas fa-file-plus"></i> New Text File</div>
+        <hr style="border:0; border-top:1px solid #eee;">
+        <div onclick="loadData()">Refresh</div>
+    </div>
+
+
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; // GANTI DENGAN URL GAS KAMU
         const params = new URLSearchParams(window.location.search);
@@ -152,25 +160,191 @@
             const list = document.getElementById('file-list');
             list.innerHTML = "";
 
+            // 1. RENDER FOLDERS (TAMBAHKAN oncontextmenu)
             data.folders.forEach(f => {
                 list.innerHTML += `
-                    <div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')">
+                    <div class="file-row" 
+                        onclick="syncAndOpen('${f.id}', '${f.name}')" 
+                        oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
                         <div><i class="fas fa-folder"></i> ${f.name}</div>
                         <div style="color:#999">Folder</div>
                         <div style="color:#999">--</div>
                     </div>`;
             });
 
+            // 2. RENDER FILES (SUDAH ADA oncontextmenu)
             data.files.forEach(f => {
                 const ext = f.name.split('.').pop().toUpperCase();
                 list.innerHTML += `
-                    <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
+                    <div class="file-row" 
+                        ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" 
+                        oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
                         <div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div>
                         <div style="color:#999">${ext} File</div>
                         <div style="color:#999">N/A</div>
                     </div>`;
             });
         }
+
+        function createTreeNode(id, name, isRoot = false) {
+            return `
+                <div class="tree-node" id="node-${id}">
+                    <div class="tree-row" 
+                        onclick="toggleFolder('${id}', '${name}', this)"
+                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')">
+                        <span class="expander">▶</span>
+                        <i class="fas ${isRoot ? 'fa-home' : 'fa-folder'}"></i>
+                        <span>${name}</span>
+                    </div>
+                    <div class="sub-tree" id="sub-${id}"></div>
+                </div>`;
+        }
+
+        // --- LOGIKA KLIK KANAN (CONTEXT MENU) ---
+
+        // 1. Klik Kanan pada File/Folder di Panel Kanan
+        function showCtx(e, id, name) {
+            e.preventDefault();
+            e.stopPropagation(); // Biar nggak tembus ke menu area kosong
+            selectedId = id; 
+            selectedName = name;
+            
+            const menu = document.getElementById('ctx-item');
+            closeMenus(); // Tutup menu lain dulu
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+        }
+
+        // 2. Klik Kanan di Sidebar (Panel Kiri)
+        // Tambahkan event listener ini di dalam fungsi render() pada elemen sidebar
+        function showSidebarCtx(e, id, name) {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedId = id;
+            selectedName = name;
+            
+            const menu = document.getElementById('ctx-sidebar');
+            closeMenus();
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+        }
+
+        // 3. Klik Kanan di Area Kosong (New Folder/File)
+        document.getElementById('main-container').oncontextmenu = (e) => {
+            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
+                e.preventDefault();
+                closeMenus();
+                const menu = document.getElementById('ctx-empty');
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            }
+        };
+
+        // === FUNGSI BUAT FOLDER BARU ===
+        async function createNewFolder() {
+            const folderName = prompt("Masukkan Nama Folder Baru:");
+            if (!folderName) return;
+
+            document.getElementById('status').innerText = "Creating Folder...";
+            try {
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "TERMINAL_EXEC",
+                        command: "mkdir",
+                        args: folderName,
+                        currentDir: currentFolderId // Folder yang sedang dibuka
+                    })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    loadData(currentFolderId); // Refresh tampilan setelah jadi
+                } else {
+                    alert("Gagal buat folder: " + result.msg);
+                }
+            } catch (e) {
+                alert("Error: " + e.toString());
+            }
+        }
+
+        // === FUNGSI BUAT FILE TEKS BARU ===
+        async function createNewFile() {
+            const fileName = prompt("Masukkan Nama File (contoh: catatan.txt):");
+            if (!fileName) return;
+
+            document.getElementById('status').innerText = "Creating File...";
+            try {
+                // Kita kirim file kosong (base64 string kosong)
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "UPSERT_FILE",
+                        name: fileName,
+                        mimeType: "text/plain",
+                        base64: "", // File kosong tanpa isi
+                        folderId: currentFolderId
+                    })
+                });
+                const result = await res.json();
+                if (result.status === "success") {
+                    loadData(currentFolderId); // Refresh tampilan
+                } else {
+                    alert("Gagal buat file: " + result.msg);
+                }
+            } catch (e) {
+                alert("Error: " + e.toString());
+            }
+        }
+
+        // Tutup semua menu saat klik kiri di mana saja
+        window.onclick = closeMenus;
+        function closeMenus() {
+            document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
+        }
+
+        // --- FUNGSI ACTION (DELETE & RENAME) ---
+
+        // 1. Fungsi Delete (Pindah ke Trash)
+        async function deleteItem() {
+            if (!selectedId) return;
+            if (confirm(`Pindahkan "${selectedName}" ke Tempat Sampah?`)) {
+                document.getElementById('status').innerText = "Deleting...";
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "MOVE_TO_TRASH", id: selectedId })
+                });
+                const result = await res.json();
+                if(result.status === "success") {
+                    loadData(currentFolderId); // Refresh tampilan
+                } else {
+                    alert("Gagal hapus: " + result.msg);
+                }
+            }
+        }
+
+        // 2. Fungsi Rename
+        async function renameItem() {
+            if (!selectedId) return;
+            const newName = prompt("Masukkan nama baru:", selectedName);
+            if (newName && newName !== selectedName) {
+                document.getElementById('status').innerText = "Renaming...";
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "RENAME", id: selectedId, newName: newName })
+                });
+                const result = await res.json();
+                if(result.status === "success") {
+                    loadData(currentFolderId); // Refresh tampilan
+                } else {
+                    alert("Gagal rename: " + result.msg);
+                }
+            }
+        }
+
+
 
         // Sinkronisasi: Klik di kanan akan menggerakkan tree di kiri
         async function syncAndOpen(id, name) {
