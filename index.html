@@ -124,7 +124,7 @@
     <script>
 
     // === CONFIGURATION ===
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEKOwPXtlJYFbWrEpm5n0mjsFROUzfBS3FQvbYMH5t3secOLTIm4y5ojdzIJigfEK6/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         let windowCount = 0;
@@ -299,6 +299,61 @@
             }
         }
     }
+    // Fungsi untuk membuka Editor Monaco di Sub-Window
+        function openEditor(fileId, fileName) {
+            const winId = `edit-${Date.now()}`;
+            const winHtml = `
+                <div id="${winId}" class="sub-window" style="width:800px; height:500px; top:50px; left:100px;">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
+                        <span>📝 Editor: ${fileName}</span>
+                        <div class="win-controls">
+                            <button onclick="saveFile('${winId}', '${fileId}')"><i class="fas fa-save"></i> Save</button>
+                            <button onclick="document.getElementById('${winId}').remove()">×</button>
+                        </div>
+                    </div>
+                    <div class="win-body">
+                        <div id="monaco-${winId}" style="width:100%; height:100%;"></div>
+                    </div>
+                </div>`;
+            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+
+            // Load Monaco Editor dari CDN (Gratis & Ringan)
+            if (!window.monaco) {
+                const loader = document.createElement('script');
+                loader.src = "https://cdnjs.cloudflare.com";
+                loader.onload = () => startMonaco(winId, fileId);
+                document.head.appendChild(loader);
+            } else {
+                startMonaco(winId, fileId);
+            }
+        }
+
+        async function startMonaco(winId, fileId) {
+            require.config({ paths: { vs: 'https://cdnjs.cloudflare.com' } });
+            require(['vs/editor/editor.main'], async function () {
+                const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
+                const data = await res.json();
+
+                // Tentukan bahasa berdasarkan ekstensi
+                const ext = data.name.split('.').pop();
+                const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'py': 'python' };
+                
+                window[`editor_${winId}`] = monaco.editor.create(document.getElementById(`monaco-${winId}`), {
+                    value: data.content,
+                    language: langMap[ext] || 'plaintext',
+                    theme: 'vs-dark'
+                });
+            });
+        }
+
+        async function saveFile(winId, fileId) {
+            const content = window[`editor_${winId}`].getValue();
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "SAVE_FILE_CONTENT", id: fileId, content: content })
+            });
+            alert("File Saved! 💾");
+        }
 
     // === 4. CLOUD HIBERNATE (SAVE SESSION) ===
         async function saveCloudSession() {

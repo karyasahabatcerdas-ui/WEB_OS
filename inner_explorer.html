@@ -90,7 +90,7 @@
 
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEKOwPXtlJYFbWrEpm5n0mjsFROUzfBS3FQvbYMH5t3secOLTIm4y5ojdzIJigfEK6/exec"; 
         const ID_FDD = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const params = new URLSearchParams(window.location.search);
 
@@ -134,6 +134,40 @@
                 </div>`;
         }
 
+        async function renameItem() {
+            const newName = prompt("Nama baru:", selectedName);
+            if (newName && newName !== selectedName) {
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
+                });
+                loadData(activeFolderId);
+            }
+        }
+
+        async function deleteItem() {
+            if (confirm(`Hapus "${selectedName}" ke Trash?`)) {
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'MOVE_TO_TRASH', id: selectedId }) 
+                });
+                loadData(activeFolderId);
+            }
+        }
+
+        // Update handleFileOpen di index.html untuk panggil Editor
+        function handleFileOpen(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const codeExts = ['js', 'html', 'css', 'txt', 'py', 'json'];
+            
+            if (codeExts.includes(ext)) {
+                openEditor(file.id, file.name);
+            } else if (file.mime.includes('image')) {
+                openPreview(file);
+            } else {
+                window.open(`https://drive.google.com{file.id}`);
+            }
+        }
 
 
         async function toggleFolder(id, name, element, depth) {
