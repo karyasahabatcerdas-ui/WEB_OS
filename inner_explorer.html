@@ -3,20 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #fff; color: #333; overflow-x: hidden; }
-        .toolbar { padding: 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; background: #fdfdfd; position: sticky; top: 0; z-index: 5; }
+        /* Layout Two-Pane */
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; background: #fff; overflow: hidden; }
+        
+        /* Panel Kiri: Navigasi Folder */
+        #side-pane { width: 200px; border-right: 1px solid #eee; background: #f9f9f9; padding: 10px; overflow-y: auto; flex-shrink: 0; }
+        .side-item { padding: 8px; cursor: pointer; border-radius: 5px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .side-item:hover { background: #e0e0e0; }
+        .side-item.active { background: #007bff; color: white; }
+
+        /* Panel Kanan: Konten Utama */
+        #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .toolbar { padding: 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; background: #fdfdfd; }
         .toolbar button { padding: 5px 10px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; }
         
-        .explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; padding: 15px; }
-        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; position: relative; border: 1px solid transparent; }
+        .explorer-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; padding: 15px; overflow-y: auto; }
+        
+        /* Item Style */
+        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; border: 1px solid transparent; }
         .item:hover { background: #f0f7ff; border: 1px solid #cce5ff; }
         .item img { width: 45px; height: 45px; margin-bottom: 5px; pointer-events: none; }
-        .item-name { font-size: 11px; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .item-name { font-size: 11px; word-break: break-all; 
+                    display: -webkit-box; -webkit-line-clamp: 2; 
+                    line-clamp: 2; /* Tambahkan baris ini untuk standar */
+                    -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* Drop Zone */
+        /* Overlay & Menu */
         #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.15); border: 2px dashed #007bff; display: none; align-items: center; justify-content: center; z-index: 10; font-weight: bold; color: #007bff; pointer-events: none; }
-
-        /* Context Menu */
         #ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 100; min-width: 120px; }
         #ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; }
         #ctx-menu div:hover { background: #007bff; color: white; }
@@ -24,19 +37,27 @@
 </head>
 <body>
 
-    <div class="toolbar">
-        <button onclick="window.history.back()">⬅️</button>
-        <button onclick="loadData()">🔄 Refresh</button>
-        <div id="status" style="font-size: 10px; align-self: center; color: #888;">Ready</div>
+    <!-- PANEL KIRI -->
+    <div id="side-pane">
+        <div style="font-weight: bold; font-size: 12px; margin-bottom: 10px; color: #888;">FOLDERS</div>
+        <div id="folder-list-side"></div>
     </div>
 
-    <div id="file-list" class="explorer-grid">
-        <!-- Data file & folder muncul di sini -->
+    <!-- PANEL KANAN -->
+    <div id="main-container">
+        <div class="toolbar">
+            <button onclick="window.history.back()">⬅️</button>
+            <button onclick="loadData()">🔄 Refresh</button>
+            <div id="status" style="font-size: 10px; align-self: center; color: #888;">Ready</div>
+        </div>
+
+        <div id="file-list" class="explorer-grid">
+            <!-- Data muncul di sini -->
+        </div>
     </div>
 
     <div id="drop-zone">Lepaskan file untuk Upload</div>
 
-    <!-- Context Menu -->
     <div id="ctx-menu">
         <div onclick="renameItem()">Rename</div>
         <div onclick="deleteItem()" style="color: red;">Delete (Trash)</div>
@@ -45,24 +66,41 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwtmbwIHH1IYbqQdY64-cwPm-J1VAVxD9LrMEgrct3tSUMGgjk2yup-3O6Khs2JZIl6/exec";
         const params = new URLSearchParams(window.location.search);
-        const folderId = params.get('folderId');
+        let currentFolderId = params.get('folderId') || ""; // ID folder yang sedang dibuka
         let selectedId = null;
         let selectedName = "";
 
-        async function loadData() {
+        async function loadData(id = currentFolderId) {
+            currentFolderId = id;
             document.getElementById('status').innerText = "Loading...";
-            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${folderId}`);
-            const data = await res.json();
-            render(data);
+            try {
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                render(data);
+            } catch (e) {
+                console.error("Fetch Error:", e);
+            }
             document.getElementById('status').innerText = "Done";
         }
 
         function render(data) {
             const list = document.getElementById('file-list');
+            const side = document.getElementById('folder-list-side');
             list.innerHTML = "";
+            side.innerHTML = "";
 
-            // Render Folders
+            // Render Panel Kiri (Hanya Folder)
             data.folders.forEach(f => {
+                const sideDiv = document.createElement('div');
+                sideDiv.className = `side-item ${f.id === currentFolderId ? 'active' : ''}`;
+                sideDiv.innerHTML = `📁 ${f.name}`;
+                sideDiv.onclick = () => {
+                    // Update URL tanpa reload halaman (opsional) atau navigasi biasa
+                    window.location.href = `inner_explorer.html?folderId=${f.id}`;
+                };
+                side.appendChild(sideDiv);
+
+                // Render Grid Kanan (Folder)
                 const div = document.createElement('div');
                 div.className = "item";
                 div.innerHTML = `<img src="https://img.icons8.com"><div class="item-name">${f.name}</div>`;
@@ -71,19 +109,22 @@
                 list.appendChild(div);
             });
 
-            // Render Files
+            // Render Grid Kanan (Files)
             data.files.forEach(f => {
                 const div = document.createElement('div');
                 div.className = "item";
                 const icon = f.mime.includes('image') ? 'image' : 'file';
                 div.innerHTML = `<img src="https://img.icons8.com{icon}.png"><div class="item-name">${f.name}</div>`;
-                div.ondblclick = () => parent.handleFileOpen(f);
+                div.ondblclick = () => {
+                    if(window.parent && window.parent.handleFileOpen) {
+                        window.parent.handleFileOpen(f);
+                    }
+                };
                 div.oncontextmenu = (e) => showCtx(e, f.id, f.name);
                 list.appendChild(div);
             });
         }
 
-        // Context Menu Logic
         function showCtx(e, id, name) {
             e.preventDefault();
             selectedId = id; selectedName = name;
@@ -94,6 +135,13 @@
 
         window.onclick = () => document.getElementById('ctx-menu').style.display = 'none';
 
+        async function deleteItem() {
+            if (confirm(`Hapus ${selectedName} ke Trash?`)) {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'MOVE_TO_TRASH', id: selectedId }) });
+                loadData();
+            }
+        }
+
         async function renameItem() {
             const newName = prompt("Nama baru:", selectedName);
             if (newName) {
@@ -102,14 +150,13 @@
             }
         }
 
-        // Drag and Drop Upload
+        // Drag & Drop
         window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display = 'flex'; };
         window.ondragleave = () => document.getElementById('drop-zone').style.display = 'none';
         window.ondrop = async (e) => {
             e.preventDefault();
             document.getElementById('drop-zone').style.display = 'none';
             document.getElementById('status').innerText = "Uploading...";
-            
             for (let file of e.dataTransfer.files) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -119,7 +166,7 @@
                         name: file.name, 
                         mimeType: file.type, 
                         base64: reader.result.split(',')[1], 
-                        folderId: folderId
+                        folderId: currentFolderId
                     })});
                     loadData();
                 };
@@ -128,6 +175,5 @@
 
         loadData();
     </script>
-
 </body>
 </html>

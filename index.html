@@ -41,14 +41,38 @@
     <!-- Desktop Area -->
     <div id="desktop"></div>
 
-    <!-- Taskbar -->
+    <!-- Taskbar Utama -->
     <div class="taskbar">
-        <div class="start-btn" onclick="createNewExplorer()">
-            <img src="https://img.icons8.com">
+        <!-- Tombol Start (Membuka Menu, bukan langsung Window) -->
+        <div class="start-btn" onclick="toggleStartMenu()">
+            <i class="fab fa-windows"></i> Start
         </div>
-        <div id="taskbar-apps" style="display:flex; gap:10px;"></div>
-        <div id="clock" style="padding-right:15px; color:var(--text-main); font-size:12px;">00:00</div>
+
+        <!-- Tempat Ikon Jendela yang sedang aktif (Minimize/Restore) -->
+        <div id="taskbar-apps" style="display:flex; flex:1; gap:10px; padding:0 15px;"></div>
+
+        <!-- Jam & Quick Settings -->
+        <div class="clock" id="clock" onclick="openQuickSettings()" style="padding-right:15px; cursor:pointer;">
+            00:00
+        </div>
     </div>
+
+
+    <!-- Bagian Body & Layout Utama -->
+    <div id="desktop" oncontextmenu="showDesktopCtx(event)"></div>
+
+    <!-- Start Menu (List Program) -->
+    <div id="start-menu" class="start-menu">
+        <div class="search-bar"><input type="text" id="global-search" placeholder="Search Drive..." onkeypress="doGlobalSearch(event)"></div>
+        <div class="menu-list">
+            <div onclick="createNewExplorer()"><i class="fas fa-folder"></i> Explorer</div>
+            <div onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
+            <div onclick="openTrash()"><i class="fas fa-trash"></i> Trash Bin</div>
+            <div onclick="openQuickSettings()"><i class="fas fa-cog"></i> Settings</div>
+        </div>
+    </div>
+
+
 
     <script>
 
