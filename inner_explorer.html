@@ -2,349 +2,240 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
-        /* Layout Two-Pane */
-        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; background: #fff; overflow: hidden; }
+        :root { --accent: #007bff; --border: #eee; --bg-side: #f8f9fa; }
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; overflow: hidden; }
         
-        /* Panel Kiri: Navigasi Folder */
-        #side-pane { width: 200px; border-right: 1px solid #eee; background: #f9f9f9; padding: 10px; overflow-y: auto; flex-shrink: 0; }
-        .side-item { padding: 8px; cursor: pointer; border-radius: 5px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .side-item:hover { background: #e0e0e0; }
-        .side-item.active { background: #007bff; color: white; }
+        /* PANEL KIRI: TREE VIEW */
+        #side-pane { width: 250px; border-right: 1px solid #ddd; background: var(--bg-side); padding: 10px; overflow-y: auto; flex-shrink: 0; }
+        .tree-item { 
+            padding: 6px 10px; cursor: pointer; border-radius: 4px; font-size: 13px; 
+            display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: 0.2s;
+        }
+        .tree-item:hover { background: rgba(0,123,255,0.1); }
+        .tree-item.active { background: var(--accent); color: white; font-weight: bold; }
+        .tree-item i { width: 16px; text-align: center; }
 
-        /* Panel Kanan: Konten Utama */
+        /* PANEL KANAN: DETAILS VIEW */
         #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .toolbar { padding: 8px; border-bottom: 1px solid #eee; display: flex; gap: 8px; background: #fdfdfd; }
-        .toolbar button { padding: 5px 10px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px; }
         
-        .explorer-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; padding: 15px; overflow-y: auto; }
-        
-        /* Item Style */
-        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; border: 1px solid transparent; }
-        .item:hover { background: #f0f7ff; border: 1px solid #cce5ff; }
-        .item img { width: 45px; height: 45px; margin-bottom: 5px; pointer-events: none; }
-        .item-name { font-size: 11px; word-break: break-all; 
-                    display: -webkit-box; -webkit-line-clamp: 2; 
-                    line-clamp: 2; /* Tambahkan baris ini untuk standar */
-                    -webkit-box-orient: vertical; overflow: hidden; }
+        /* Address Bar & Search */
+        .address-bar { padding: 10px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; background: #fff; align-items: center; }
+        .nav-btn { background: none; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 4px 8px; }
+        #path-input { flex: 1; padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; outline: none; }
+        #path-input:focus { border-color: var(--accent); }
 
-        /* Overlay & Menu */
-        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.15); border: 2px dashed #007bff; display: none; align-items: center; justify-content: center; z-index: 10; font-weight: bold; color: #007bff; pointer-events: none; }
-        #ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 100; min-width: 120px; }
-        #ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; }
-        #ctx-menu div:hover { background: #007bff; color: white; }
+        /* Table Header & Rows */
+        .list-container { flex: 1; overflow-y: auto; }
+        .row-header, .file-row { 
+            display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; 
+            align-items: center; border-bottom: 1px solid #f5f5f5; font-size: 13px;
+        }
+        .row-header { font-weight: bold; background: #fafafa; color: #666; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #eee; }
+        .file-row:hover { background: #f0f7ff; cursor: pointer; }
+        .file-row i { font-size: 16px; margin-right: 10px; color: #f39c12; }
+        .file-row.selected { background: #e8f2ff; }
+
+        /* UI Elements */
+        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; color: var(--accent); font-weight: bold; }
+        .ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 1000; min-width: 150px; border-radius: 5px; padding: 5px 0; }
+        .ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .ctx-menu div:hover { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
 
-    <!-- PANEL KIRI -->
+    <!-- SIDEBAR: TREE VIEW -->
     <div id="side-pane">
-        <div style="font-weight: bold; font-size: 12px; margin-bottom: 10px; color: #888;">FOLDERS</div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-weight:bold; font-size:12px; color:#888;">DRIVES & FOLDERS</span>
-            <button onclick="promptAddRoot()" style="font-size:10px; cursor:pointer; border:none; background:none; color:var(--accent);">+ Add</button>
+            <span style="font-weight:bold; font-size:11px; color:#888;">DRIVES & FOLDERS</span>
+            <button onclick="promptAddRoot()" style="border:none; background:none; color:var(--accent); cursor:pointer; font-size:10px;">+ ADD</button>
         </div>
-        <div id="folder-list-side"></div>
+        <div id="folder-tree-side"></div>
     </div>
 
-    <!-- PANEL KANAN -->
+    <!-- MAIN: DETAILS VIEW -->
     <div id="main-container">
-        <div class="toolbar">
-            <button onclick="window.history.back()">⬅️</button>
-            <button onclick="loadData()">🔄 Refresh</button>
-            <div id="status" style="font-size: 10px; align-self: center; color: #888;">Ready</div>
+        <div class="address-bar">
+            <button class="nav-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+            <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
+            <input type="text" id="path-input" placeholder="Search or Path..." onkeyup="filterList()">
         </div>
 
-        <div id="file-list" class="explorer-grid">
-            <!-- Data muncul di sini -->
+        <div class="list-container" id="main-list-area">
+            <div class="row-header">
+                <div>Name</div>
+                <div>Type</div>
+                <div>Size</div>
+            </div>
+            <div id="file-list"></div>
         </div>
     </div>
 
-    <div id="drop-zone">Lepaskan file untuk Upload</div>
-
-    <div id="ctx-menu">
-        <div onclick="renameItem()">Rename</div>
-        <div onclick="deleteItem()" style="color: red;">Delete (Trash)</div>
+    <!-- OVERLAYS -->
+    <div id="drop-zone">Drop to Upload</div>
+    
+    <!-- CONTEXT MENUS -->
+    <div id="ctx-item" class="ctx-menu">
+        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
+        <div onclick="deleteItem()" style="color:red;"><i class="fas fa-trash"></i> Delete</div>
     </div>
 
-    <!-- Menu Klik Kanan SIDEBAR (Unpin) -->
-    <div id="ctx-sidebar" class="ctx-menu-style" style="display:none; position:fixed; background:white; border:1px solid #ccc; z-index:1000;">
-        <div onclick="unpinRoot()" style="color:red; padding:8px 15px; cursor:pointer;">Unpin Drive</div>
+    <div id="ctx-empty" class="ctx-menu">
+        <div onclick="createNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</div>
+        <div onclick="createNewFile()"><i class="fas fa-file-plus"></i> New Text File</div>
+        <hr style="border:0; border-top:1px solid #eee;">
+        <div onclick="loadData()">Refresh</div>
     </div>
 
-    <!-- Menu Klik Kanan AREA KOSONG EXPLORER (New Folder/File) -->
-    <div id="ctx-empty" class="ctx-menu-style" style="display:none; position:fixed; background:white; border:1px solid #ccc; z-index:1000;">
-        <div onclick="createNewFolder()" style="padding:8px 15px; cursor:pointer;">📁 New Folder</div>
-        <div onclick="createNewFile()" style="padding:8px 15px; cursor:pointer;">📄 New Text File</div>
-        <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-        <div onclick="loadData()" style="padding:8px 15px; cursor:pointer;">🔄 Refresh</div>
+    <div id="ctx-sidebar" class="ctx-menu">
+        <div onclick="unpinRoot()" style="color:red;">Unpin Drive</div>
     </div>
-
-    <style>
-        .ctx-menu-style { box-shadow: 2px 2px 10px rgba(0,0,0,0.1); border-radius: 5px; font-size: 13px; }
-        .ctx-menu-style div:hover { background: #007bff; color: white; }
-    </style>
-
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec";
+        const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI DENGAN URL GAS KAMU
         const params = new URLSearchParams(window.location.search);
-        let currentFolderId = params.get('folderId') || ""; // ID folder yang sedang dibuka
-        let selectedId = null;
-        let selectedName = "";
+        let currentFolderId = params.get('folderId') || "";
+        let currentFolderName = params.get('pName') || "Home Root";
+        let externalRoots = [];
+        let selectedId = null, selectedName = "";
 
-
-        // Ganti panggilannya di akhir script saja, bukan di dalam render
-        // loadExternalRoots(); 
-
+        // 1. DATA LOADING
         async function loadData(id = currentFolderId) {
-            currentFolderId = id;
-            document.getElementById('status').innerText = "Loading...";
-            
-            // Pastikan External Roots dimuat dulu SEBELUM render
-            if (externalRoots.length === 0) {
-                try {
-                    const res = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
-                    const data = await res.json();
-                    // CEK: Jika data adalah array, pakai data tersebut. Jika tidak, jadikan array kosong.
-                    externalRoots = Array.isArray(data) ? data : [];
-                } catch(e) { 
-                    console.log("Gagal memuat roots, set ke kosong.");
-                    externalRoots = []; 
-                }
-            }
-
+            document.getElementById('path-input').value = `Root / ${currentFolderName}`;
             try {
+                // Ambil Roots jika belum ada
+                if (externalRoots.length === 0) {
+                    const rRes = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
+                    const rData = await rRes.json();
+                    externalRoots = Array.isArray(rData) ? rData : [];
+                }
                 const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
                 const data = await res.json();
                 render(data);
-            } catch (err) {
-                console.error("Gagal load tree:", err);
-            }
-            document.getElementById('status').innerText = "Done";
+            } catch(e) { console.error(e); }
         }
 
-
+        // 2. RENDERING LOGIC
         function render(data) {
-            const list = document.getElementById('file-list');
-            const side = document.getElementById('folder-list-side');
-            list.innerHTML = "";
-            side.innerHTML = "";
+            const side = document.getElementById('folder-tree-side');
+            const main = document.getElementById('file-list');
+            side.innerHTML = ""; main.innerHTML = "";
 
-            // 1. RENDER EXTERNAL ROOTS (DRIVE LAIN)
-            // PROTEKSI: Pastikan externalRoots adalah array sebelum di-loop
-            if (externalRoots && Array.isArray(externalRoots)) {
-                externalRoots.forEach(root => {
-                    const div = document.createElement('div');
-                    div.className = `side-item ${root.id === currentFolderId ? 'active' : ''}`;
-                    div.innerHTML = `🌐 ${root.name}`;
-                    div.onclick = () => window.location.href = `inner_explorer.html?folderId=${root.id}`;
-                    
-                    // Context Menu untuk Unpin
-                    div.oncontextmenu = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        selectedRootId = root.id;
-                        const menu = document.getElementById('ctx-sidebar');
-                        menu.style.display = 'block';
-                        menu.style.left = e.pageX + 'px';
-                        menu.style.top = e.pageY + 'px';
-                    };
-                    side.appendChild(div);
-                });
-            }
-
-            // 2. TOMBOL HOME ROOT (DRIVE UTAMA)
-            const homeDiv = document.createElement('div');
-            homeDiv.className = `side-item ${currentFolderId === "" ? 'active' : ''}`;
-            homeDiv.innerHTML = `🏠 <b>Home Root</b>`;
-            homeDiv.onclick = () => window.location.href = `inner_explorer.html?folderId=`; 
-            side.appendChild(homeDiv);
+            // Render Sidebar (Roots)
+            externalRoots.forEach(r => addSideNode(side, r.name, r.id, "fa-globe"));
+            addSideNode(side, "Home Root", "", "fa-home");
             
-            side.innerHTML += `<hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">`;
+            // Render Sidebar (Current Folders)
+            data.folders.forEach(f => addSideNode(side, f.name, f.id, "fa-folder", 15));
 
-            // 3. RENDER SUB-FOLDERS (PANEL KIRI & KANAN)
+            // Render Main Pane (Details View)
             data.folders.forEach(f => {
-                // Panel Kiri
-                const sideDiv = document.createElement('div');
-                sideDiv.className = `side-item ${f.id === currentFolderId ? 'active' : ''}`;
-                sideDiv.innerHTML = `📁 ${f.name}`;
-                sideDiv.onclick = () => window.location.href = `inner_explorer.html?folderId=${f.id}`;
-                side.appendChild(sideDiv);
-
-                // Panel Kanan (Icon)
-                const div = document.createElement('div');
-                div.className = "item";
-                // Pakai emoji besar di grid kanan agar terlihat jelas
-                div.innerHTML = `
-                    <div style="font-size: 40px; margin-bottom: 5px;">📁</div>
-                    <div class="item-name">${f.name}</div>
-                `;
-                div.onclick = () => window.location.href = `inner_explorer.html?folderId=${f.id}`;
-                div.oncontextmenu = (e) => showCtx(e, f.id, f.name);
-                list.appendChild(div);
+                main.innerHTML += `
+                <div class="file-row" onclick="navigate('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}', 'item')">
+                    <div><i class="fas fa-folder"></i> ${f.name}</div>
+                    <div style="color:#999">Folder</div>
+                    <div style="color:#999">--</div>
+                </div>`;
             });
 
-            // 4. RENDER FILES (PANEL KANAN)
             data.files.forEach(f => {
-                const div = document.createElement('div');
-                div.className = "item";
-                
-            // 1. Tentukan icon berdasarkan mime type
-            let iconName = "file"; 
-            if (f.mime.includes('image')) iconName = "image";
-            else if (f.mime.includes('spreadsheet')) iconName = "google-sheets";
-            else if (f.mime.includes('document')) iconName = "google-docs";
-            else if (f.mime.includes('pdf')) iconName = "pdf";
-
-            // 2. PERBAIKAN URL: Gunakan backtick ` (tombol di bawah Esc)
-            // Jangan gunakan tanda kutip ' atau " untuk baris di bawah ini
-            div.innerHTML = `
-                <img src="https://img.icons8.com/${iconName}.png">
-                <div class="item-name">${f.name}</div>
-            `;
-                
-                div.ondblclick = () => {
-                    if(window.parent && window.parent.handleFileOpen) {
-                        window.parent.handleFileOpen(f);
-                    }
-                };
-                div.oncontextmenu = (e) => showCtx(e, f.id, f.name);
-                list.appendChild(div);
+                const type = f.mime.split('/').pop().toUpperCase();
+                main.innerHTML += `
+                <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}', 'item')">
+                    <div><i class="fas fa-file-alt" style="color:#7f8c8d"></i> ${f.name}</div>
+                    <div style="color:#999">${type} File</div>
+                    <div style="color:#999">N/A</div>
+                </div>`;
             });
         }
 
-        async function unpinRoot() {
-            if(confirm("Hapus drive ini dari daftar?")) {
-                externalRoots = externalRoots.filter(r => r.id !== selectedRootId);
-                await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "SAVE_EXTERNAL_ROOTS", data: externalRoots })
-                });
-                loadData(currentFolderId);
-            }
+        function addSideNode(parent, name, id, icon, indent = 0) {
+            const div = document.createElement('div');
+            div.className = `tree-item ${id === currentFolderId ? 'active' : ''}`;
+            div.style.paddingLeft = `${indent + 10}px`;
+            div.innerHTML = `<i class="fas ${icon}"></i> ${name}`;
+            div.onclick = () => navigate(id, name);
+            if(icon === "fa-globe") div.oncontextmenu = (e) => showCtx(e, id, name, 'sidebar');
+            parent.appendChild(div);
         }
 
-        function showCtx(e, id, name) {
-            e.preventDefault();
+        function navigate(id, name) {
+            window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
+        }
+
+        // 3. SEARCH / FILTER
+        function filterList() {
+            const val = document.getElementById('path-input').value.split('/').pop().trim().toLowerCase();
+            document.querySelectorAll('.file-row').forEach(row => {
+                const name = row.children[0].innerText.toLowerCase();
+                row.style.display = name.includes(val) ? 'grid' : 'none';
+            });
+        }
+
+        // 4. CONTEXT MENUS
+        function showCtx(e, id, name, type) {
+            e.preventDefault(); e.stopPropagation();
             selectedId = id; selectedName = name;
-            const menu = document.getElementById('ctx-menu');
+            closeMenus();
+            const menuId = type === 'item' ? 'ctx-item' : (type === 'sidebar' ? 'ctx-sidebar' : 'ctx-empty');
+            const menu = document.getElementById(menuId);
             menu.style.display = 'block';
             menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
         }
 
-        window.onclick = () => document.getElementById('ctx-menu').style.display = 'none';
-
-        async function deleteItem() {
-            if (confirm(`Hapus ${selectedName} ke Trash?`)) {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'MOVE_TO_TRASH', id: selectedId }) });
-                loadData();
-            }
+        function closeMenus() {
+            document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
         }
 
-        async function renameItem() {
-            const newName = prompt("Nama baru:", selectedName);
-            if (newName) {
-                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'RENAME', id: selectedId, newName }) });
-                loadData();
-            }
-        }
-
-        let externalRoots = [];
-
-        async function loadExternalRoots() {
-            try {
-                const res = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
-                externalRoots = await res.json();
-                // Render ulang sidebar setelah data root eksternal diambil
-                loadData(currentFolderId); 
-            } catch(e) { console.log("Belum ada root eksternal."); }
+        // 5. ACTIONS
+        async function createNewFolder() {
+            const n = prompt("New Folder Name:");
+            if(!n) return;
+            await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'TERMINAL_EXEC', command:'mkdir', args:n, currentDir:currentFolderId})});
+            loadData();
         }
 
         async function promptAddRoot() {
-            const name = prompt("Nama Drive (Misal: Drive Kantor):");
-            if (!name) return;
-            const id = prompt("Masukkan ID Folder Google Drive (Hasil Share):");
-            if (!id) return;
-
-            externalRoots.push({ name, id });
-            
-            // Simpan ke Cloud agar permanen
-            await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "SAVE_EXTERNAL_ROOTS", data: externalRoots })
-            });
-            
-            loadData(currentFolderId);
-        }
-
-        // Fungsi Create Folder
-        async function createNewFolder() {
-            const name = prompt("Nama folder baru:");
-            if (!name) return;
-            
-            document.getElementById('status').innerText = "Creating folder...";
-            // Gunakan TERMINAL_EXEC atau buat action baru di GAS
-            await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "TERMINAL_EXEC", command: "mkdir", args: name, currentDir: currentFolderId })
-            });
-            loadData();
-        }
-
-        // Fungsi Create File (Simple Text)
-        async function createNewFile() {
-            const name = prompt("Nama file (misal: catatan.txt):");
-            if (!name) return;
-            
-            // Kirim data dummy/kosong (Base64 dari string kosong adalah "")
-            await fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "UPSERT_FILE", name: name, mimeType: "text/plain", base64: "", folderId: currentFolderId })
-            });
-            loadData();
-        }
-
-        // Deteksi klik kanan di area kosong explorer
-        document.getElementById('main-container').oncontextmenu = (e) => {
-            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
-                e.preventDefault();
-                const menu = document.getElementById('ctx-empty');
-                menu.style.display = 'block';
-                menu.style.left = e.pageX + 'px';
-                menu.style.top = e.pageY + 'px';
+            const n = prompt("Drive Name:");
+            const i = prompt("Folder ID:");
+            if(n && i) {
+                externalRoots.push({name:n, id:i});
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'SAVE_EXTERNAL_ROOTS', data:externalRoots})});
+                loadData();
             }
+        }
+
+        async function unpinRoot() {
+            if(confirm("Unpin this drive?")) {
+                externalRoots = externalRoots.filter(r => r.id !== selectedId);
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'SAVE_EXTERNAL_ROOTS', data:externalRoots})});
+                loadData();
+            }
+        }
+
+        // Global Listeners
+        window.onclick = closeMenus;
+        document.getElementById('main-list-area').oncontextmenu = (e) => {
+            if(e.target.id === 'main-list-area' || e.target.id === 'file-list') showCtx(e, '', '', 'empty');
         };
 
-        // Tutup semua menu saat klik kiri di mana saja
-        window.onclick = () => {
-            document.getElementById('ctx-menu').style.display = 'none';
-            document.getElementById('ctx-sidebar').style.display = 'none';
-            document.getElementById('ctx-empty').style.display = 'none';
-        };
-
-        // Drag & Drop
-        window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display = 'flex'; };
-        window.ondragleave = () => document.getElementById('drop-zone').style.display = 'none';
+        // Drag & Drop Upload
+        window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display='flex'; };
+        window.ondragleave = () => document.getElementById('drop-zone').style.display='none';
         window.ondrop = async (e) => {
-            e.preventDefault();
-            document.getElementById('drop-zone').style.display = 'none';
-            document.getElementById('status').innerText = "Uploading...";
-            for (let file of e.dataTransfer.files) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                    await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({
-                        action: 'UPSERT_FILE', 
-                        name: file.name, 
-                        mimeType: file.type, 
-                        base64: reader.result.split(',')[1], 
-                        folderId: currentFolderId
+            e.preventDefault(); document.getElementById('drop-zone').style.display='none';
+            for(let f of e.dataTransfer.files) {
+                const r = new FileReader(); r.readAsDataURL(f);
+                r.onload = async () => {
+                    await fetch(GAS_URL, {method:'POST', body: JSON.stringify({
+                        action:'UPSERT_FILE', name:f.name, mimeType:f.type, base64:r.result.split(',')[1], folderId:currentFolderId
                     })});
                     loadData();
                 };
             }
-        }
+        };
 
         loadData();
     </script>
