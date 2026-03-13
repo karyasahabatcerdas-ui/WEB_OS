@@ -4,240 +4,184 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
-        :root { --accent: #007bff; --border: #eee; --bg-side: #f8f9fa; }
-        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; overflow: hidden; }
+        :root { --accent: #007bff; --border: #eee; --bg-side: #f8f9fa; --text: #333; }
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; overflow: hidden; color: var(--text); }
         
-        /* PANEL KIRI: TREE VIEW */
-        #side-pane { width: 250px; border-right: 1px solid #ddd; background: var(--bg-side); padding: 10px; overflow-y: auto; flex-shrink: 0; }
-        .tree-item { 
-            padding: 6px 10px; cursor: pointer; border-radius: 4px; font-size: 13px; 
-            display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: 0.2s;
-        }
-        .tree-item:hover { background: rgba(0,123,255,0.1); }
-        .tree-item.active { background: var(--accent); color: white; font-weight: bold; }
-        .tree-item i { width: 16px; text-align: center; }
+        /* SIDEBAR (TREE VIEW) */
+        #side-pane { width: 260px; border-right: 1px solid #ddd; background: var(--bg-side); padding: 10px; overflow-y: auto; flex-shrink: 0; }
+        .tree-node { display: flex; flex-direction: column; margin-left: 12px; }
+        .tree-row { display: flex; align-items: center; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; gap: 6px; white-space: nowrap; transition: 0.1s; }
+        .tree-row:hover { background: rgba(0,123,255,0.1); }
+        .tree-row.active { background: var(--accent); color: white; font-weight: bold; }
+        .expander { width: 14px; text-align: center; font-size: 10px; cursor: pointer; transition: transform 0.2s; }
+        .expander.open { transform: rotate(90deg); }
+        .sub-tree { display: none; border-left: 1px solid #ddd; margin-left: 6px; }
+        .sub-tree.show { display: block; }
 
-        /* PANEL KANAN: DETAILS VIEW */
+        /* MAIN CONTENT (DETAILS VIEW) */
         #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Address Bar & Search */
         .address-bar { padding: 10px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; background: #fff; align-items: center; }
-        .nav-btn { background: none; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 4px 8px; }
-        #path-input { flex: 1; padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; outline: none; }
-        #path-input:focus { border-color: var(--accent); }
-
-        /* Table Header & Rows */
-        .list-container { flex: 1; overflow-y: auto; }
-        .row-header, .file-row { 
-            display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; 
-            align-items: center; border-bottom: 1px solid #f5f5f5; font-size: 13px;
-        }
-        .row-header { font-weight: bold; background: #fafafa; color: #666; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #eee; }
+        #path-input { flex: 1; padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; outline: none; background: #fdfdfd; }
+        
+        .list-header, .file-row { display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; font-size: 13px; align-items: center; border-bottom: 1px solid #f5f5f5; }
+        .list-header { font-weight: bold; background: #fafafa; position: sticky; top: 0; z-index: 5; color: #666; }
         .file-row:hover { background: #f0f7ff; cursor: pointer; }
         .file-row i { font-size: 16px; margin-right: 10px; color: #f39c12; }
-        .file-row.selected { background: #e8f2ff; }
-
-        /* UI Elements */
-        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; color: var(--accent); font-weight: bold; }
+        
+        /* CONTEXT MENUS */
         .ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 1000; min-width: 150px; border-radius: 5px; padding: 5px 0; }
-        .ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; }
         .ctx-menu div:hover { background: var(--accent); color: white; }
+        
+        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- SIDEBAR: TREE VIEW -->
     <div id="side-pane">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-weight:bold; font-size:11px; color:#888;">DRIVES & FOLDERS</span>
-            <button onclick="promptAddRoot()" style="border:none; background:none; color:var(--accent); cursor:pointer; font-size:10px;">+ ADD</button>
+        <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px;">DRIVES & FOLDERS</div>
+        <div id="root-anchor" class="tree-node" style="margin-left:0;">
+            <!-- Tree Root akan di-render di sini -->
         </div>
-        <div id="folder-tree-side"></div>
     </div>
 
-    <!-- MAIN: DETAILS VIEW -->
     <div id="main-container">
         <div class="address-bar">
-            <button class="nav-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
-            <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
-            <input type="text" id="path-input" placeholder="Search or Path..." onkeyup="filterList()">
+            <button onclick="loadData(lastParentId)" style="border:1px solid #ddd; background:none; cursor:pointer; border-radius:4px;">⬅️</button>
+            <input type="text" id="path-input" placeholder="Search files..." onkeyup="filterFiles()">
         </div>
-
-        <div class="list-container" id="main-list-area">
-            <div class="row-header">
-                <div>Name</div>
-                <div>Type</div>
-                <div>Size</div>
-            </div>
-            <div id="file-list"></div>
-        </div>
+        <div class="list-header"><div>Name</div><div>Type</div><div>Size</div></div>
+        <div id="file-list" style="overflow-y:auto; flex:1;"></div>
     </div>
 
-    <!-- OVERLAYS -->
     <div id="drop-zone">Drop to Upload</div>
-    
-    <!-- CONTEXT MENUS -->
+
     <div id="ctx-item" class="ctx-menu">
-        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
-        <div onclick="deleteItem()" style="color:red;"><i class="fas fa-trash"></i> Delete</div>
-    </div>
-
-    <div id="ctx-empty" class="ctx-menu">
-        <div onclick="createNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</div>
-        <div onclick="createNewFile()"><i class="fas fa-file-plus"></i> New Text File</div>
-        <hr style="border:0; border-top:1px solid #eee;">
-        <div onclick="loadData()">Refresh</div>
-    </div>
-
-    <div id="ctx-sidebar" class="ctx-menu">
-        <div onclick="unpinRoot()" style="color:red;">Unpin Drive</div>
+        <div onclick="renameItem()">Rename</div>
+        <div onclick="deleteItem()" style="color:red">Delete</div>
     </div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; // GANTI DENGAN URL GAS KAMU
         const params = new URLSearchParams(window.location.search);
-        let currentFolderId = params.get('folderId') || "";
-        let currentFolderName = params.get('pName') || "Home Root";
-        let externalRoots = [];
-        let selectedId = null, selectedName = "";
+        let activeFolderId = params.get('folderId') || ""; 
+        let lastParentId = ""; 
+        let loadedNodes = {}; 
 
-        // 1. DATA LOADING
-        async function loadData(id = currentFolderId) {
-            document.getElementById('path-input').value = `Root / ${currentFolderName}`;
-            try {
-                // Ambil Roots jika belum ada
-                if (externalRoots.length === 0) {
-                    const rRes = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
-                    const rData = await rRes.json();
-                    externalRoots = Array.isArray(rData) ? rData : [];
-                }
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-                render(data);
-            } catch(e) { console.error(e); }
+        // 1. INITIALIZE OS EXPLORER
+        async function init() {
+            const rootId = activeFolderId || "ID_FOLDER_ROOT_KAMU"; // GANTI JUGA DI SINI
+            const anchor = document.getElementById('root-anchor');
+            
+            // Build Home Root Node
+            anchor.innerHTML = createTreeNode(rootId, "Home Root", true);
+            await toggleFolder(rootId, "Home Root", anchor.querySelector('.tree-row'));
         }
 
-        // 2. RENDERING LOGIC
-        function render(data) {
-            const side = document.getElementById('folder-tree-side');
-            const main = document.getElementById('file-list');
-            side.innerHTML = ""; main.innerHTML = "";
-
-            // Render Sidebar (Roots)
-            externalRoots.forEach(r => addSideNode(side, r.name, r.id, "fa-globe"));
-            addSideNode(side, "Home Root", "", "fa-home");
-            
-            // Render Sidebar (Current Folders)
-            data.folders.forEach(f => addSideNode(side, f.name, f.id, "fa-folder", 15));
-
-            // Render Main Pane (Details View)
-            data.folders.forEach(f => {
-                main.innerHTML += `
-                <div class="file-row" onclick="navigate('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}', 'item')">
-                    <div><i class="fas fa-folder"></i> ${f.name}</div>
-                    <div style="color:#999">Folder</div>
-                    <div style="color:#999">--</div>
+        // 2. TREE LOGIC (RECURSIVE)
+        function createTreeNode(id, name, isRoot = false) {
+            return `
+                <div class="tree-node" id="node-${id}">
+                    <div class="tree-row" onclick="toggleFolder('${id}', '${name}', this)">
+                        <span class="expander">▶</span>
+                        <i class="fas ${isRoot ? 'fa-home' : 'fa-folder'}"></i>
+                        <span>${name}</span>
+                    </div>
+                    <div class="sub-tree" id="sub-${id}"></div>
                 </div>`;
+        }
+
+        async function toggleFolder(id, name, element) {
+            const subTree = document.getElementById(`sub-${id}`);
+            const expander = element.querySelector('.expander');
+
+            // Set Active State
+            document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
+            element.classList.add('active');
+            activeFolderId = id;
+
+            // Fetch data jika belum pernah diload
+            if (!loadedNodes[id]) {
+                expander.innerHTML = "⌛";
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                
+                // Render sub-folders di tree (kiri)
+                subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name)).join('');
+                loadedNodes[id] = true;
+                
+                // Render isi di main pane (kanan)
+                renderMainContent(data);
+            } else {
+                // Jika sudah ada, tinggal refresh tampilan kanan saja
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                renderMainContent(data);
+            }
+
+            // Toggle Expand/Collapse
+            const isOpening = !subTree.classList.contains('show');
+            subTree.classList.toggle('show', isOpening);
+            expander.classList.toggle('open', isOpening);
+            expander.innerHTML = "▶";
+
+            document.getElementById('path-input').value = `Root / ${name}`;
+        }
+
+        // 3. MAIN CONTENT LOGIC (DETAILS)
+        function renderMainContent(data) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+
+            data.folders.forEach(f => {
+                list.innerHTML += `
+                    <div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')">
+                        <div><i class="fas fa-folder"></i> ${f.name}</div>
+                        <div style="color:#999">Folder</div>
+                        <div style="color:#999">--</div>
+                    </div>`;
             });
 
             data.files.forEach(f => {
-                const type = f.mime.split('/').pop().toUpperCase();
-                main.innerHTML += `
-                <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}', 'item')">
-                    <div><i class="fas fa-file-alt" style="color:#7f8c8d"></i> ${f.name}</div>
-                    <div style="color:#999">${type} File</div>
-                    <div style="color:#999">N/A</div>
-                </div>`;
+                const ext = f.name.split('.').pop().toUpperCase();
+                list.innerHTML += `
+                    <div class="file-row" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
+                        <div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div>
+                        <div style="color:#999">${ext} File</div>
+                        <div style="color:#999">N/A</div>
+                    </div>`;
             });
         }
 
-        function addSideNode(parent, name, id, icon, indent = 0) {
-            const div = document.createElement('div');
-            div.className = `tree-item ${id === currentFolderId ? 'active' : ''}`;
-            div.style.paddingLeft = `${indent + 10}px`;
-            div.innerHTML = `<i class="fas ${icon}"></i> ${name}`;
-            div.onclick = () => navigate(id, name);
-            if(icon === "fa-globe") div.oncontextmenu = (e) => showCtx(e, id, name, 'sidebar');
-            parent.appendChild(div);
+        // Sinkronisasi: Klik di kanan akan menggerakkan tree di kiri
+        async function syncAndOpen(id, name) {
+            const rowElement = document.querySelector(`#node-${id} .tree-row`);
+            if (rowElement) {
+                toggleFolder(id, name, rowElement);
+            } else {
+                // Jika node belum ada di tree, buka manual
+                window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
+            }
         }
 
-        function navigate(id, name) {
-            window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
-        }
-
-        // 3. SEARCH / FILTER
-        function filterList() {
-            const val = document.getElementById('path-input').value.split('/').pop().trim().toLowerCase();
+        function filterFiles() {
+            const val = document.getElementById('path-input').value.split('/').pop().toLowerCase();
             document.querySelectorAll('.file-row').forEach(row => {
                 const name = row.children[0].innerText.toLowerCase();
                 row.style.display = name.includes(val) ? 'grid' : 'none';
             });
         }
 
-        // 4. CONTEXT MENUS
-        function showCtx(e, id, name, type) {
+        // Context Menu & Global Listeners
+        function showCtx(e, id, name) {
             e.preventDefault(); e.stopPropagation();
-            selectedId = id; selectedName = name;
-            closeMenus();
-            const menuId = type === 'item' ? 'ctx-item' : (type === 'sidebar' ? 'ctx-sidebar' : 'ctx-empty');
-            const menu = document.getElementById(menuId);
+            const menu = document.getElementById('ctx-item');
             menu.style.display = 'block';
             menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
         }
+        window.onclick = () => document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
 
-        function closeMenus() {
-            document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
-        }
-
-        // 5. ACTIONS
-        async function createNewFolder() {
-            const n = prompt("New Folder Name:");
-            if(!n) return;
-            await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'TERMINAL_EXEC', command:'mkdir', args:n, currentDir:currentFolderId})});
-            loadData();
-        }
-
-        async function promptAddRoot() {
-            const n = prompt("Drive Name:");
-            const i = prompt("Folder ID:");
-            if(n && i) {
-                externalRoots.push({name:n, id:i});
-                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'SAVE_EXTERNAL_ROOTS', data:externalRoots})});
-                loadData();
-            }
-        }
-
-        async function unpinRoot() {
-            if(confirm("Unpin this drive?")) {
-                externalRoots = externalRoots.filter(r => r.id !== selectedId);
-                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'SAVE_EXTERNAL_ROOTS', data:externalRoots})});
-                loadData();
-            }
-        }
-
-        // Global Listeners
-        window.onclick = closeMenus;
-        document.getElementById('main-list-area').oncontextmenu = (e) => {
-            if(e.target.id === 'main-list-area' || e.target.id === 'file-list') showCtx(e, '', '', 'empty');
-        };
-
-        // Drag & Drop Upload
-        window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display='flex'; };
-        window.ondragleave = () => document.getElementById('drop-zone').style.display='none';
-        window.ondrop = async (e) => {
-            e.preventDefault(); document.getElementById('drop-zone').style.display='none';
-            for(let f of e.dataTransfer.files) {
-                const r = new FileReader(); r.readAsDataURL(f);
-                r.onload = async () => {
-                    await fetch(GAS_URL, {method:'POST', body: JSON.stringify({
-                        action:'UPSERT_FILE', name:f.name, mimeType:f.type, base64:r.result.split(',')[1], folderId:currentFolderId
-                    })});
-                    loadData();
-                };
-            }
-        };
-
-        loadData();
+        init();
     </script>
 </body>
 </html>
