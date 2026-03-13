@@ -23,7 +23,9 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     let currentFolderId = urlParams.get('folderId');
-    const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI INI
+    //https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec
+    //const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI INI
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwVjbF3gKKFQCshDv_AOo1n_rEVUj_eskoQCIjQYr7wPZoCvMOMo00XJlv2P7mV7E4H/exec";
 
     async function loadData() {
         const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${currentFolderId}`);
