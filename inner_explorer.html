@@ -82,6 +82,7 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; // GANTI DENGAN URL GAS KAMU
         const params = new URLSearchParams(window.location.search);
         let activeFolderId = params.get('folderId') || ""; 
+        let currentFolderName = params.get('pName') || "Home Root";
         let lastParentId = ""; 
         let loadedNodes = {}; 
         // Tambahkan baris ini di paling atas <script> (di luar fungsi) sebagai database urutan folder
@@ -257,7 +258,6 @@
             const name = prompt("Nama folder baru:");
             if (!name) return;
             
-            // Gunakan pengaman: Hanya update teks jika elemennya ada
             const statusEl = document.getElementById('status');
             if (statusEl) statusEl.innerText = "Creating folder...";
             
@@ -268,17 +268,18 @@
                         action: "TERMINAL_EXEC", 
                         command: "mkdir", 
                         args: name, 
-                        currentDir: currentFolderId 
+                        currentDir: activeFolderId // SESUAIKAN NAMA VARIABELNYA DI SINI
                     })
                 });
                 
                 if (statusEl) statusEl.innerText = "Success!";
-                loadData(currentFolderId); // Refresh tampilan
+                loadData(activeFolderId); // REFRESH PAKAI ID YANG SAMA
             } catch (e) {
                 if (statusEl) statusEl.innerText = "Error!";
                 console.error(e);
             }
         }
+
 
 
         // === FUNGSI BUAT FILE TEKS BARU ===
@@ -355,6 +356,49 @@
             }
         }
 
+        async function loadData(id = activeFolderId) {
+            // 1. Update status folder aktif
+            activeFolderId = id;
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerText = "Loading...";
+
+            try {
+                // 2. Ambil data External Roots (Drive Lain) jika belum ada di memori
+                if (externalRoots.length === 0) {
+                    const rRes = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
+                    const rData = await rRes.json();
+                    externalRoots = Array.isArray(rData) ? rData : [];
+                }
+
+                // 3. Ambil Struktur Folder & File dari folder yang diklik
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+
+                // 4. Update Tampilan (Kiri & Kanan)
+                render(data);
+                
+                // 5. Update Address Bar (Breadcrumb)
+                updateBreadcrumb(id, data.name);
+
+                if (statusEl) statusEl.innerText = "Done";
+            } catch (err) {
+                console.error("Gagal Load Data:", err);
+                if (statusEl) statusEl.innerText = "Error!";
+            }
+        }
+
+        // Fungsi pembantu buat update Address Bar
+        function updateBreadcrumb(id, name) {
+            const folderIndex = pathStack.findIndex(item => item.id === id);
+            if (folderIndex === -1) {
+                pathStack.push({ id: id, name: name });
+            } else {
+                pathStack = pathStack.slice(0, folderIndex + 1);
+            }
+            const fullPath = pathStack.map(item => item.name).join(' / ');
+            document.getElementById('path-input').value = `Root / ${fullPath}`;
+        }
+
 
 
         // Sinkronisasi: Klik di kanan akan menggerakkan tree di kiri
@@ -386,6 +430,8 @@
         window.onclick = () => document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
 
         init();
+        // Panggil fungsi pertama kali saat halaman dibuka
+        loadData();
     </script>
 </body>
 </html>
