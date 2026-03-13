@@ -41,6 +41,22 @@
     <!-- Desktop Area -->
     <div id="desktop"></div>
 
+    <!-- Start Menu Panel (Melayang di atas tombol Start) -->
+    <div id="start-menu" class="start-menu-panel" style="display:none; position:absolute; bottom:55px; left:10px; width:300px; background:var(--bg-panel); backdrop-filter:blur(20px); border-radius:12px; border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:10001; padding:15px;">
+        <div style="font-weight:bold; margin-bottom:10px; opacity:0.7; font-size:12px;">APPLICATIONS</div>
+        <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
+        <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
+        <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
+        <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
+        <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate (Save)</div>
+        <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
+    </div>
+    <style>
+        .menu-item { padding: 10px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 12px; color: var(--text-main); transition: 0.2s; }
+        .menu-item:hover { background: rgba(0,123,255,0.1); color: var(--accent); }
+        .menu-item i { width: 20px; text-align: center; }
+    </style>
+
     <!-- Taskbar Utama -->
     <div class="taskbar">
         <!-- Tombol Start (Membuka Menu, bukan langsung Window) -->
@@ -72,6 +88,11 @@
         </div>
     </div>
 
+    <div id="ctx-desktop" style="display:none; position:absolute; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:9999; padding:5px; min-width:160px;">
+    <div class="menu-item" onclick="createNewExplorer()">📁 New Explorer</div>
+    <div class="menu-item" onclick="openTerminal()">>_ Open Terminal</div>
+    <div class="menu-item" onclick="openQuickSettings()">⚙️ Personalize</div>
+    </div>
 
 
     <script>
@@ -229,10 +250,50 @@
         document.getElementById('clock').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     }
     
-    function toggleStartMenu() {
-        // Logic start menu pop-up (seperti yang dibuat sebelumnya)
-        alert("Start Menu: Buka Explorer, Terminal, atau Settings via Shortcut!");
-    }
+// Membuka/Menutup Start Menu
+function toggleStartMenu() {
+    const menu = document.getElementById('start-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Klik di desktop untuk menutup start menu otomatis
+document.getElementById('desktop').addEventListener('click', () => {
+    document.getElementById('start-menu').style.display = 'none';
+    document.getElementById('ctx-desktop').style.display = 'none'; // Tutup klik kanan juga
+});
+
+// Membuka Jendela Quick Settings (Info Drive Asli)
+async function openQuickSettings() {
+    // Kita buat jendela baru khusus settings
+    const winId = `settings-${Date.now()}`;
+    
+    // Ambil data kuota asli dari GAS
+    const res = await fetch(`${GAS_URL}?action=GET_DRIVE_INFO`);
+    const info = await res.json();
+    
+    const usedGB = (info.used / (1024**3)).toFixed(2);
+    const limitGB = (info.limit / (1024**3)).toFixed(2);
+    const percent = Math.round((info.used / info.limit) * 100);
+
+    const winHtml = `
+        <div id="${winId}" class="sub-window" style="width:300px; height:auto; top:100px; right:50px;">
+            <div class="win-header" onmousedown="dragWin(this.parentElement)">
+                <span>⚙️ Settings & Info</span>
+                <button onclick="document.getElementById('${winId}').remove()">×</button>
+            </div>
+            <div class="win-body" style="padding:20px; background:var(--bg-panel); color:var(--text-main);">
+                <div style="font-size:12px; margin-bottom:5px;">Storage: ${usedGB} GB / ${limitGB} GB</div>
+                <div style="width:100%; background:#ddd; height:8px; border-radius:4px; overflow:hidden;">
+                    <div style="width:${percent}%; background:var(--accent); height:100%;"></div>
+                </div>
+                <div style="font-size:10px; margin-top:5px; text-align:right;">${percent}% Used</div>
+                <hr style="margin:15px 0; border:0; border-top:1px solid var(--border);">
+                <button onclick="document.getElementById('wallpaper-input').click()" style="width:100%; padding:8px; cursor:pointer;">🖼️ Change Wallpaper</button>
+            </div>
+        </div>`;
+    
+    document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+}
 </script>
 
 </body>
