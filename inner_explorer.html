@@ -103,12 +103,15 @@
 
         // 1. INITIALIZE OS EXPLORER
         async function init() {
-            const rootId = activeFolderId || "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";; // GANTI JUGA DI SINI
+            const rootId = activeFolderId || "ID_FOLDER_ROOT_KAMU";
             const anchor = document.getElementById('root-anchor');
             
-            // Build Home Root Node
-            anchor.innerHTML = createTreeNode(rootId, "Home Root", true);
-            await toggleFolder(rootId, "Home Root", anchor.querySelector('.tree-row'));
+            // Inisialisasi Stack Awal
+            pathStack = []; 
+            
+            anchor.innerHTML = createTreeNode(rootId, "Home Root", true, 0);
+            // Panggil toggleFolder dengan depth 0
+            await toggleFolder(rootId, "Home Root", anchor.querySelector('.tree-row'), 0);
         }
 
         // 2. TREE LOGIC (RECURSIVE)
@@ -126,57 +129,49 @@
 
 
 
-            async function toggleFolder(id, name, element) {
-                const subTree = document.getElementById(`sub-${id}`);
-                const expander = element.querySelector('.expander');
+        async function toggleFolder(id, name, element, depth) {
+            const subTree = document.getElementById(`sub-${id}`);
+            const expander = element.querySelector('.expander');
 
-                // === LOGIKA BREADCRUMB BERJENJANG ===
-                // 1. Cek apakah folder ini sudah ada di tumpukan (stack)
-                const folderIndex = pathStack.findIndex(item => item.id === id);
+            // === LOGIKA SMART BREADCRUMB (REPLACE LEVEL) ===
+            // Potong stack sesuai kedalaman (depth). 
+            // Misal klik level 1, maka semua data dari level 1 ke bawah dibuang dulu.
+            pathStack = pathStack.slice(0, depth); 
+            pathStack.push({ id: id, name: name, depth: depth });
+
+            const fullPath = pathStack.map(item => item.name).join(' / ');
+            document.getElementById('path-input').value = `Root / ${fullPath}`;
+            // ===============================================
+
+            activeFolderId = id;
+            document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
+            element.classList.add('active');
+
+            if (!loadedNodes[id]) {
+                if (expander) expander.innerHTML = "⌛";
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
                 
-                if (folderIndex === -1) {
-                    // Jika folder baru, tambahkan ke urutan paling belakang
-                    pathStack.push({ id: id, name: name });
-                } else {
-                    // Jika klik folder yang sudah ada di atasnya (navigasi mundur), potong sisa jalurnya
-                    pathStack = pathStack.slice(0, folderIndex + 1);
-                }
-                
-                // 2. Gabungkan semua nama folder di stack untuk ditampilkan di Address Bar
-                const fullPath = pathStack.map(item => item.name).join(' / ');
-                document.getElementById('path-input').value = `Root / ${fullPath}`;
-                // ===================================
+                // Render sub-tree dengan depth + 1
+                subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name, false, depth + 1)).join('');
+                loadedNodes[id] = true;
+                renderMainContent(data);
+            } else {
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                renderMainContent(data);
+            }
 
-                // Set Active State (Warna Biru di Sidebar)
-                document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
-                element.classList.add('active');
-                activeFolderId = id;
-
-                // Fetch data jika belum pernah diload (Lazy Loading)
-                if (!loadedNodes[id]) {
-                    expander.innerHTML = "⌛"; // Loading indicator
-                    const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                    const data = await res.json();
-                    
-                    // Render sub-folders di tree (panel kiri)
-                    subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name)).join('');
-                    loadedNodes[id] = true;
-                    
-                    // Render isi file/folder di main pane (panel kanan)
-                    renderMainContent(data);
-                } else {
-                    // Jika sudah pernah dibuka, cukup ambil data terbaru untuk panel kanan (Refresh)
-                    const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                    const data = await res.json();
-                    renderMainContent(data);
-                }
-
-                // Toggle Expand/Collapse (Animasi Panah ▶)
+            if (subTree) {
                 const isOpening = !subTree.classList.contains('show');
                 subTree.classList.toggle('show', isOpening);
-                expander.classList.toggle('open', isOpening);
-                expander.innerHTML = "▶";
+                if (expander) {
+                    expander.classList.toggle('open', isOpening);
+                    expander.innerHTML = "▶";
+                }
             }
+        }
+
 
         // 3. MAIN CONTENT LOGIC (DETAILS)
         function renderMainContent(data) {
@@ -209,12 +204,13 @@
             });
         }
 
-        function createTreeNode(id, name, isRoot = false) {
+        function createTreeNode(id, name, isRoot = false, depth = 0) {
             return `
                 <div class="tree-node" id="node-${id}">
                     <div class="tree-row" 
-                        onclick="toggleFolder('${id}', '${name}', this)"
-                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')">
+                        onclick="toggleFolder('${id}', '${name}', this, ${depth})"
+                        oncontextmenu="showSidebarCtx(event, '${id}', '${name}')"
+                        data-depth="${depth}">
                         <span class="expander">▶</span>
                         <i class="fas ${isRoot ? 'fa-home' : 'fa-folder'}"></i>
                         <span>${name}</span>
@@ -222,6 +218,7 @@
                     <div class="sub-tree" id="sub-${id}"></div>
                 </div>`;
         }
+
 
         // --- LOGIKA KLIK KANAN (CONTEXT MENU) ---
 
