@@ -90,29 +90,36 @@
 
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; // GANTI DENGAN URL GAS KAMU
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; 
+        const ID_FDD = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const params = new URLSearchParams(window.location.search);
-        let activeFolderId = params.get('folderId') || ""; 
+
+        // Gunakan activeFolderId secara konsisten
+        let activeFolderId = params.get('folderId') || ID_FDD; 
         let currentFolderName = params.get('pName') || "Home Root";
-        let externalRoots = []; // Inisialisasi agar tidak "undefined"
+        let externalRoots = []; 
         let lastParentId = ""; 
         let loadedNodes = {}; 
-        // Tambahkan baris ini di paling atas <script> (di luar fungsi) sebagai database urutan folder
-        let pathStack = [{ id: activeFolderId, name: currentFolderName }]; 
+        let pathStack = []; // Biarkan kosong, nanti diisi otomatis oleh toggleFolder saat init
         let selectedId = null, selectedName = "";
 
         // 1. INITIALIZE OS EXPLORER
         async function init() {
-            const rootId = activeFolderId || "ID_FOLDER_ROOT_KAMU";
+            // Gunakan ID dari URL jika ada, jika tidak balik ke ID_FDD
+            const rootId = activeFolderId; 
             const anchor = document.getElementById('root-anchor');
             
-            // Inisialisasi Stack Awal
+            // Reset stack sebelum memulai agar tidak duplikat
             pathStack = []; 
             
-            anchor.innerHTML = createTreeNode(rootId, "Home Root", true, 0);
-            // Panggil toggleFolder dengan depth 0
-            await toggleFolder(rootId, "Home Root", anchor.querySelector('.tree-row'), 0);
+            if (anchor) {
+                anchor.innerHTML = createTreeNode(rootId, "Home Root", true, 0);
+                // Panggil toggleFolder untuk memicu render pertama kali
+                const firstRow = anchor.querySelector('.tree-row');
+                if (firstRow) await toggleFolder(rootId, "Home Root", firstRow, 0);
+            }
         }
+
 
         // 2. TREE LOGIC (RECURSIVE)
         function createTreeNode(id, name, isRoot = false) {
@@ -297,7 +304,9 @@
             const fileName = prompt("Masukkan Nama File (contoh: catatan.txt):");
             if (!fileName) return;
 
-            document.getElementById('status').innerText = "Creating File...";
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerText = "Creating File...";
+            
             try {
                 // Kita kirim file kosong (base64 string kosong)
                 const res = await fetch(GAS_URL, {
@@ -306,20 +315,24 @@
                         action: "UPSERT_FILE",
                         name: fileName,
                         mimeType: "text/plain",
-                        base64: "", // File kosong tanpa isi
-                        folderId: currentFolderId
+                        base64: "", // File kosong
+                        folderId: activeFolderId // PAKAI NAMA VARIABEL YANG AKTIF
                     })
                 });
+                
                 const result = await res.json();
                 if (result.status === "success") {
-                    loadData(currentFolderId); // Refresh tampilan
+                    if (statusEl) statusEl.innerText = "Success!";
+                    loadData(activeFolderId); // Refresh tampilan folder saat ini
                 } else {
                     alert("Gagal buat file: " + result.msg);
                 }
             } catch (e) {
-                alert("Error: " + e.toString());
+                if (statusEl) statusEl.innerText = "Error!";
+                console.error("Create File Error:", e);
             }
         }
+
 
         // Tutup semua menu saat klik kiri di mana saja
         window.onclick = closeMenus;
