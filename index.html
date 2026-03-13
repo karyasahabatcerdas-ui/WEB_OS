@@ -254,7 +254,7 @@
             // FIX: Load loader secara dinamis jika belum ada
             if (typeof require === "undefined") {
                 const script = document.createElement('script');
-                script.src = "https://cdnjs.cloudflare.com";
+                script.src = "https://cdnjs.cloudflare.com/monaco-editor/0.34.1/min/vs/loader.min.js";
                 script.onload = () => initMonacoInWin(winId, fileId, fileName);
                 document.head.appendChild(script);
             } else {
@@ -264,7 +264,7 @@
 
         
         function initMonacoInWin(winId, fileId, fileName) {
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' } });
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/monaco-editor/0.34.1/min/vs/loader.min.js' } });
             require(['vs/editor/editor.main'], async function() {
                 try {
                     const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
