@@ -160,6 +160,32 @@
         addToTaskbar(winId, appId, title);
     }
 
+    function addToTaskbar(winId, appId, title) {
+        const taskbarApps = document.getElementById('taskbar-apps');
+        const icon = `
+            <div id="${appId}" class="task-btn active" onclick="toggleMinimize('${winId}')" 
+                style="padding: 5px 10px; background: rgba(0,0,0,0.1); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-folder" style="font-size: 14px; color: #f39c12;"></i>
+                <span style="font-size: 11px;">${title}</span>
+            </div>`;
+        taskbarApps.insertAdjacentHTML('beforeend', icon);
+    }
+
+    function toggleMinimize(winId) {
+        const win = document.getElementById(winId);
+        const appId = `app-${winId}`;
+        const btn = document.getElementById(appId);
+        
+        if (win.style.display === 'none') {
+            win.style.display = 'flex';
+            btn.classList.add('active');
+            focusWin(winId);
+        } else {
+            win.style.display = 'none';
+            btn.classList.remove('active');
+        }
+    }
+
     function dragWin(el) {
         let p1=0, p2=0, p3=0, p4=0;
         el.onmousedown = (e) => {
@@ -270,11 +296,17 @@ function toggleStartMenu() {
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-// Klik di desktop untuk menutup start menu otomatis
-document.getElementById('desktop').addEventListener('click', () => {
-    document.getElementById('start-menu').style.display = 'none';
-    document.getElementById('ctx-desktop').style.display = 'none'; // Tutup klik kanan juga
-});
+function handleFileOpen(file) {
+    const mime = file.mime || "";
+    // Logika sederhana: Jika gambar, tampilkan preview, jika tidak, info saja
+    if (mime.includes('image')) {
+        alert("Membuka Gambar: " + file.name);
+        // Nanti kita ganti dengan modal preview
+    } else {
+        alert("Membuka File: " + file.name + " (" + mime + ")");
+    }
+}
+
 
 // Membuka Jendela Quick Settings (Info Drive Asli)
 async function openQuickSettings() {
@@ -308,6 +340,14 @@ async function openQuickSettings() {
     
     document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 }
+
+
+// Klik di desktop untuk menutup start menu otomatis
+document.getElementById('desktop').addEventListener('click', () => {
+    document.getElementById('start-menu').style.display = 'none';
+    document.getElementById('ctx-desktop').style.display = 'none'; // Tutup klik kanan juga
+});
+
 </script>
 
 </body>

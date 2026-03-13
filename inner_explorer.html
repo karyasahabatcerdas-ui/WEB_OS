@@ -110,11 +110,23 @@
             });
 
             // Render Grid Kanan (Files)
+            // BAGIAN RENDERING FILES
             data.files.forEach(f => {
                 const div = document.createElement('div');
                 div.className = "item";
-                const icon = f.mime.includes('image') ? 'image' : 'file';
-                div.innerHTML = `<img src="https://img.icons8.com{icon}.png"><div class="item-name">${f.name}</div>`;
+                
+                // Tentukan icon berdasarkan mime type
+                let iconName = "file"; 
+                if (f.mime.includes('image')) iconName = "image";
+                else if (f.mime.includes('spreadsheet')) iconName = "google-sheets";
+                else if (f.mime.includes('document')) iconName = "google-docs";
+
+                // PERBAIKAN URL DI SINI (Gunakan backtick ` dan ${iconName})
+                div.innerHTML = `
+                    <img src="https://img.icons8.com{iconName}.png">
+                    <div class="item-name">${f.name}</div>
+                `;
+                
                 div.ondblclick = () => {
                     if(window.parent && window.parent.handleFileOpen) {
                         window.parent.handleFileOpen(f);
