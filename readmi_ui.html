@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --primary: #007bff;
+            --bg: #ffffff;
+            --text: #333;
+            --side-bg: #f8f9fa;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: var(--text); }
+        
+        /* Sidebar Nav */
+        nav { width: 200px; background: var(--side-bg); border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; }
+        nav h2 { font-size: 14px; text-transform: uppercase; color: #888; margin-bottom: 20px; }
+        nav a { display: block; padding: 10px; color: var(--text); text-decoration: none; border-radius: 5px; font-size: 14px; margin-bottom: 5px; }
+        nav a:hover { background: #e9ecef; color: var(--primary); }
+        nav a.active { background: var(--primary); color: white; }
+
+        /* Content Area */
+        main { flex: 1; padding: 40px; overflow-y: auto; scroll-behavior: smooth; }
+        section { margin-bottom: 50px; line-height: 1.6; }
+        h1 { border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+        h3 { color: var(--primary); margin-top: 30px; }
+        
+        code { background: #eee; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .kbd { background: #333; color: white; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-family: monospace; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th, table td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        table th { background: #f4f4f4; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; background: var(--primary); color: white; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h2>Documentation</h2>
+    <a href="#intro">🚀 Introduction</a>
+    <a href="#windows">🪟 Window System</a>
+    <a href="#shortcuts">⌨️ Shortcuts</a>
+    <a href="#terminal">💻 Terminal CLI</a>
+    <a href="#security">🔒 Security</a>
+    <a href="#deploy">📡 Deployment</a>
+</nav>
+
+<main>
+    <section id="intro">
+        <span class="badge">v1.0 Stable</span>
+        <h1>GitHub-OS Guide</h1>
+        <p>Selamat datang di <strong>GitHub-OS</strong>. Ini adalah ekosistem Cloud Desktop pribadi yang menghubungkan GitHub sebagai <em>frontend</em> dan Google Drive sebagai <em>storage backend</em>.</p>
+    </section>
+
+    <section id="windows">
+        <h3>🪟 Window Management</h3>
+        <ul>
+            <li><strong>Multi-Tasking:</strong> Klik ikon Explorer di Start Menu untuk membuka jendela baru.</li>
+            <li><strong>Aero Snap:</strong> Seret jendela ke tepi layar untuk otomatis membagi layar (Split Screen).</li>
+            <li><strong>Minimize/Restore:</strong> Gunakan tombol <code>_</code> untuk menyembunyikan jendela ke Taskbar.</li>
+        </ul>
+    </section>
+
+    <section id="shortcuts">
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <table>
+            <tr><th>Shortcut</th><th>Action</th></tr>
+            <tr><td><span class="kbd">Alt + N</span></td><td>Buka Explorer Baru</td></tr>
+            <tr><td><span class="kbd">Alt + T</span></td><td>Buka Terminal</td></tr>
+            <tr><td><span class="kbd">Alt + S</span></td><td>Cloud Hibernate (Save Session)</td></tr>
+            <tr><td><span class="kbd">Alt + L</span></td><td>Lock Screen (Kunci Layar)</td></tr>
+            <tr><td><span class="kbd">Alt + /</span></td><td>Tampilkan Shortcut Hub</td></tr>
+        </table>
+    </section>
+
+    <section id="terminal">
+        <h3>💻 Terminal Commands</h3>
+        <p>Gunakan Terminal (<span class="kbd">Alt + T</span>) untuk eksekusi cepat:</p>
+        <ul>
+            <li><code>ls</code> - Melihat daftar file/folder & ID uniknya.</li>
+            <li><code>mkdir [nama]</code> - Membuat folder baru di Drive.</li>
+            <li><code>rm [id]</code> - Memindahkan file ke Trash Bin.</li>
+            <li><code>quota</code> - Melihat sisa kapasitas Google Drive asli.</li>
+        </ul>
+    </section>
+
+    <section id="security">
+        <h3>🔒 Security & Privacy</h3>
+        <p>Sistem ini menggunakan <strong>SHA-256 Hashing</strong> untuk login. Password tidak disimpan dalam bentuk teks biasa, sehingga aman dari intipan <em>source code</em>.</p>
+        <p><strong>Lock Screen:</strong> Tekan <span class="kbd">Alt + L</span> jika ingin meninggalkan komputer tanpa Logout.</p>
+    </section>
+
+    <section id="deploy">
+        <h3>📡 Technical Setup</h3>
+        <ol>
+            <li>Pastikan <strong>GAS URL</strong> sudah terpasang di <code>index.html</code>.</li>
+            <li>Pastikan file <code>inner_explorer.html</code> berada di satu folder repositori yang sama.</li>
+            <li>Aktifkan <strong>GitHub Pages</strong> melalui Settings > Pages.</li>
+        </ol>
+    </section>
+</main>
+
+<script>
+    // Simple logic to highlight active nav
+    const links = document.querySelectorAll('nav a');
+    links.forEach(link => {
+        link.onclick = () => {
+            links.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+        };
+    });
+</script>
+
+</body>
+</html>

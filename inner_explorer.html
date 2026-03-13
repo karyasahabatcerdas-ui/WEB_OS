@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; margin: 0; background: #fff; color: #333; }
+        .toolbar { padding: 10px; border-bottom: 1px solid #eee; display: flex; gap: 10px; background: #f9f9f9; }
+        .file-list { padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .item { text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; position: relative; }
+        .item:hover { background: #e8f2ff; }
+        .item img { width: 48px; height: 48px; margin-bottom: 5px; }
+        .item-name { font-size: 12px; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        #drop-overlay { position: fixed; inset: 0; background: rgba(0,123,255,0.2); display: none; align-items: center; justify-content: center; font-weight: bold; border: 3px dashed #007bff; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="goBack()">⬅️</button>
+        <input type="text" id="search" placeholder="Search..." onkeyup="filter()">
+    </div>
+    <div id="file-list" class="file-list"></div>
+    <div id="drop-overlay">Drop to Upload</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentFolderId = urlParams.get('folderId');
+    const GAS_URL = "URL_WEB_APP_GAS_KAMU"; // GANTI INI
+
+    async function loadData() {
+        const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${currentFolderId}`);
+        const data = await res.json();
+        render(data);
+    }
+
+    function render(data) {
+        const list = document.getElementById('file-list');
+        list.innerHTML = "";
+        
+        data.folders.forEach(f => {
+            list.innerHTML += `<div class="item" ondblclick="parent.createNewExplorer('${f.id}', '${f.name}')">
+                <img src="https://img.icons8.com"><div class="item-name">${f.name}</div>
+            </div>`;
+        });
+
+        data.files.forEach(f => {
+            const icon = f.mime.includes('image') ? 'image' : 'file';
+            list.innerHTML += `<div class="item" ondblclick="parent.handleFileOpen(${JSON.stringify(f)})">
+                <img src="https://img.icons8.com{icon}.png"><div class="item-name">${f.name}</div>
+            </div>`;
+        });
+    }
+
+    // Drag & Drop Logic
+    window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-overlay').style.display='flex'; };
+    window.ondragleave = () => document.getElementById('drop-overlay').style.display='none';
+    window.ondrop = async (e) => {
+        e.preventDefault();
+        document.getElementById('drop-overlay').style.display='none';
+        for(let file of e.dataTransfer.files) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({
+                    action: 'UPSERT_FILE', name: file.name, mimeType: file.type, 
+                    base64: reader.result.split(',')[1], folderId: currentFolderId
+                })});
+                loadData();
+            };
+        }
+    };
+
+    loadData();
+</script>
+</body>
+</html>
