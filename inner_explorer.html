@@ -40,6 +40,10 @@
     <!-- PANEL KIRI -->
     <div id="side-pane">
         <div style="font-weight: bold; font-size: 12px; margin-bottom: 10px; color: #888;">FOLDERS</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight:bold; font-size:12px; color:#888;">DRIVES & FOLDERS</span>
+            <button onclick="promptAddRoot()" style="font-size:10px; cursor:pointer; border:none; background:none; color:var(--accent);">+ Add</button>
+        </div>
         <div id="folder-list-side"></div>
     </div>
 
@@ -70,16 +74,25 @@
         let selectedId = null;
         let selectedName = "";
 
+
+        // Ganti panggilannya di akhir script saja, bukan di dalam render
+        // loadExternalRoots(); 
+
         async function loadData(id = currentFolderId) {
             currentFolderId = id;
             document.getElementById('status').innerText = "Loading...";
-            try {
-                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-                const data = await res.json();
-                render(data);
-            } catch (e) {
-                console.error("Fetch Error:", e);
+            
+            // Pastikan External Roots dimuat dulu SEBELUM render
+            if (externalRoots.length === 0) {
+                try {
+                    const res = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
+                    externalRoots = await res.json();
+                } catch(e) { console.log("Roots kosong"); }
             }
+
+            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+            const data = await res.json();
+            render(data);
             document.getElementById('status').innerText = "Done";
         }
 
@@ -89,18 +102,34 @@
             list.innerHTML = "";
             side.innerHTML = "";
 
-            // Render Panel Kiri (Hanya Folder)
+            // 1. RENDER EXTERNAL ROOTS (DRIVE LAIN)
+            externalRoots.forEach(root => {
+                const div = document.createElement('div');
+                div.className = `side-item ${root.id === currentFolderId ? 'active' : ''}`;
+                div.innerHTML = `🌐 ${root.name}`;
+                div.onclick = () => window.location.href = `inner_explorer.html?folderId=${root.id}`;
+                side.appendChild(div);
+            });
+
+            // 2. TOMBOL HOME ROOT (DRIVE UTAMA)
+            const homeDiv = document.createElement('div');
+            homeDiv.className = `side-item ${currentFolderId === "" ? 'active' : ''}`;
+            homeDiv.innerHTML = `🏠 <b>Home Root</b>`;
+            homeDiv.onclick = () => window.location.href = `inner_explorer.html?folderId=`; 
+            side.appendChild(homeDiv);
+            
+            side.innerHTML += `<hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">`;
+
+            // 3. RENDER SUB-FOLDERS (PANEL KIRI & KANAN)
             data.folders.forEach(f => {
+                // Panel Kiri
                 const sideDiv = document.createElement('div');
                 sideDiv.className = `side-item ${f.id === currentFolderId ? 'active' : ''}`;
                 sideDiv.innerHTML = `📁 ${f.name}`;
-                sideDiv.onclick = () => {
-                    // Update URL tanpa reload halaman (opsional) atau navigasi biasa
-                    window.location.href = `inner_explorer.html?folderId=${f.id}`;
-                };
+                sideDiv.onclick = () => window.location.href = `inner_explorer.html?folderId=${f.id}`;
                 side.appendChild(sideDiv);
 
-                // Render Grid Kanan (Folder)
+                // Panel Kanan (Icon)
                 const div = document.createElement('div');
                 div.className = "item";
                 div.innerHTML = `<img src="https://img.icons8.com"><div class="item-name">${f.name}</div>`;
@@ -109,19 +138,16 @@
                 list.appendChild(div);
             });
 
-            // Render Grid Kanan (Files)
-            // BAGIAN RENDERING FILES
+            // 4. RENDER FILES (PANEL KANAN)
             data.files.forEach(f => {
                 const div = document.createElement('div');
                 div.className = "item";
                 
-                // Tentukan icon berdasarkan mime type
                 let iconName = "file"; 
                 if (f.mime.includes('image')) iconName = "image";
                 else if (f.mime.includes('spreadsheet')) iconName = "google-sheets";
                 else if (f.mime.includes('document')) iconName = "google-docs";
 
-                // PERBAIKAN URL DI SINI (Gunakan backtick ` dan ${iconName})
                 div.innerHTML = `
                     <img src="https://img.icons8.com{iconName}.png">
                     <div class="item-name">${f.name}</div>
@@ -136,6 +162,7 @@
                 list.appendChild(div);
             });
         }
+
 
         function showCtx(e, id, name) {
             e.preventDefault();
@@ -160,6 +187,34 @@
                 await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'RENAME', id: selectedId, newName }) });
                 loadData();
             }
+        }
+
+        let externalRoots = [];
+
+        async function loadExternalRoots() {
+            try {
+                const res = await fetch(`${GAS_URL}?action=GET_EXTERNAL_ROOTS`);
+                externalRoots = await res.json();
+                // Render ulang sidebar setelah data root eksternal diambil
+                loadData(currentFolderId); 
+            } catch(e) { console.log("Belum ada root eksternal."); }
+        }
+
+        async function promptAddRoot() {
+            const name = prompt("Nama Drive (Misal: Drive Kantor):");
+            if (!name) return;
+            const id = prompt("Masukkan ID Folder Google Drive (Hasil Share):");
+            if (!id) return;
+
+            externalRoots.push({ name, id });
+            
+            // Simpan ke Cloud agar permanen
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "SAVE_EXTERNAL_ROOTS", data: externalRoots })
+            });
+            
+            loadData(currentFolderId);
         }
 
         // Drag & Drop
