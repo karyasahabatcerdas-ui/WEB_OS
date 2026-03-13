@@ -27,6 +27,18 @@
 
         /* Login Screen */
         .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
+
+
+        /* Pastikan saat resize, iframe tidak menangkap kursor */
+        .sub-window[style*="width"] iframe, 
+        .sub-window[style*="height"] iframe {
+            pointer-events: auto;
+        }
+        /* Tambahkan ini agar saat dragging lancar */
+        .dragging iframe {
+            pointer-events: none !important;
+        }
+
     </style>
 </head>
 <body data-theme="light">
@@ -339,6 +351,32 @@ async function openQuickSettings() {
         </div>`;
     
     document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+}
+
+
+function dragWin(el) {
+    let p1=0, p2=0, p3=0, p4=0;
+    el.onmousedown = (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        focusWin(el.id);
+        
+        // TRIK: Matikan interaksi iframe saat drag agar tidak "sticky"
+        document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'none');
+        
+        p3=e.clientX; p4=e.clientY;
+        document.onmouseup = () => { 
+            document.onmouseup = null; 
+            document.onmousemove = null; 
+            // Hidupkan kembali interaksi iframe setelah lepas klik
+            document.querySelectorAll('iframe').forEach(ifrm => ifrm.style.pointerEvents = 'auto');
+            checkSnap(el); 
+        };
+        document.onmousemove = (e) => {
+            p1=p3-e.clientX; p2=p4-e.clientY; p3=e.clientX; p4=e.clientY;
+            el.style.top = (el.offsetTop - p2) + "px";
+            el.style.left = (el.offsetLeft - p1) + "px";
+        };
+    };
 }
 
 
