@@ -68,6 +68,15 @@
         <div onclick="loadData()">Refresh</div>
     </div>
 
+    <div class="toolbar">
+        <button class="nav-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+        <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
+        <input type="text" id="path-input" placeholder="Search..." onkeyup="filterList()">
+        <!-- PASTIKAN BARIS DI BAWAH INI ADA -->
+        <div id="status" style="font-size: 10px; color: #888; margin-left: 10px;">Ready</div>
+    </div>
+
+
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec"; // GANTI DENGAN URL GAS KAMU
@@ -245,30 +254,32 @@
 
         // === FUNGSI BUAT FOLDER BARU ===
         async function createNewFolder() {
-            const folderName = prompt("Masukkan Nama Folder Baru:");
-            if (!folderName) return;
-
-            document.getElementById('status').innerText = "Creating Folder...";
+            const name = prompt("Nama folder baru:");
+            if (!name) return;
+            
+            // Gunakan pengaman: Hanya update teks jika elemennya ada
+            const statusEl = document.getElementById('status');
+            if (statusEl) statusEl.innerText = "Creating folder...";
+            
             try {
-                const res = await fetch(GAS_URL, {
+                await fetch(GAS_URL, {
                     method: "POST",
-                    body: JSON.stringify({
-                        action: "TERMINAL_EXEC",
-                        command: "mkdir",
-                        args: folderName,
-                        currentDir: currentFolderId // Folder yang sedang dibuka
+                    body: JSON.stringify({ 
+                        action: "TERMINAL_EXEC", 
+                        command: "mkdir", 
+                        args: name, 
+                        currentDir: currentFolderId 
                     })
                 });
-                const result = await res.json();
-                if (result.status === "success") {
-                    loadData(currentFolderId); // Refresh tampilan setelah jadi
-                } else {
-                    alert("Gagal buat folder: " + result.msg);
-                }
+                
+                if (statusEl) statusEl.innerText = "Success!";
+                loadData(currentFolderId); // Refresh tampilan
             } catch (e) {
-                alert("Error: " + e.toString());
+                if (statusEl) statusEl.innerText = "Error!";
+                console.error(e);
             }
         }
+
 
         // === FUNGSI BUAT FILE TEKS BARU ===
         async function createNewFile() {
