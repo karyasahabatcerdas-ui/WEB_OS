@@ -67,6 +67,25 @@
         <div onclick="deleteItem()" style="color: red;">Delete (Trash)</div>
     </div>
 
+    <!-- Menu Klik Kanan SIDEBAR (Unpin) -->
+    <div id="ctx-sidebar" class="ctx-menu-style" style="display:none; position:fixed; background:white; border:1px solid #ccc; z-index:1000;">
+        <div onclick="unpinRoot()" style="color:red; padding:8px 15px; cursor:pointer;">Unpin Drive</div>
+    </div>
+
+    <!-- Menu Klik Kanan AREA KOSONG EXPLORER (New Folder/File) -->
+    <div id="ctx-empty" class="ctx-menu-style" style="display:none; position:fixed; background:white; border:1px solid #ccc; z-index:1000;">
+        <div onclick="createNewFolder()" style="padding:8px 15px; cursor:pointer;">📁 New Folder</div>
+        <div onclick="createNewFile()" style="padding:8px 15px; cursor:pointer;">📄 New Text File</div>
+        <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+        <div onclick="loadData()" style="padding:8px 15px; cursor:pointer;">🔄 Refresh</div>
+    </div>
+
+    <style>
+        .ctx-menu-style { box-shadow: 2px 2px 10px rgba(0,0,0,0.1); border-radius: 5px; font-size: 13px; }
+        .ctx-menu-style div:hover { background: #007bff; color: white; }
+    </style>
+
+
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwV0tHF6L4tT2ZERSSCKJ9C6KrtoS9WnNmPIypkAsijju9UbJTYsJPAzA-fCgl5nuaO/exec";
         const params = new URLSearchParams(window.location.search);
@@ -103,11 +122,23 @@
             side.innerHTML = "";
 
             // 1. RENDER EXTERNAL ROOTS (DRIVE LAIN)
+            // Ubah bagian render externalRoots di sidebar:
             externalRoots.forEach(root => {
                 const div = document.createElement('div');
                 div.className = `side-item ${root.id === currentFolderId ? 'active' : ''}`;
                 div.innerHTML = `🌐 ${root.name}`;
                 div.onclick = () => window.location.href = `inner_explorer.html?folderId=${root.id}`;
+                
+                // TAMBAHKAN INI UNTUK UNPIN
+                div.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectedRootId = root.id;
+                    const menu = document.getElementById('ctx-sidebar');
+                    menu.style.display = 'block';
+                    menu.style.left = e.pageX + 'px';
+                    menu.style.top = e.pageY + 'px';
+                };
                 side.appendChild(div);
             });
 
@@ -163,6 +194,16 @@
             });
         }
 
+        async function unpinRoot() {
+            if(confirm("Hapus drive ini dari daftar?")) {
+                externalRoots = externalRoots.filter(r => r.id !== selectedRootId);
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "SAVE_EXTERNAL_ROOTS", data: externalRoots })
+                });
+                loadData(currentFolderId);
+            }
+        }
 
         function showCtx(e, id, name) {
             e.preventDefault();
@@ -216,6 +257,51 @@
             
             loadData(currentFolderId);
         }
+
+        // Fungsi Create Folder
+        async function createNewFolder() {
+            const name = prompt("Nama folder baru:");
+            if (!name) return;
+            
+            document.getElementById('status').innerText = "Creating folder...";
+            // Gunakan TERMINAL_EXEC atau buat action baru di GAS
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "TERMINAL_EXEC", command: "mkdir", args: name, currentDir: currentFolderId })
+            });
+            loadData();
+        }
+
+        // Fungsi Create File (Simple Text)
+        async function createNewFile() {
+            const name = prompt("Nama file (misal: catatan.txt):");
+            if (!name) return;
+            
+            // Kirim data dummy/kosong (Base64 dari string kosong adalah "")
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "UPSERT_FILE", name: name, mimeType: "text/plain", base64: "", folderId: currentFolderId })
+            });
+            loadData();
+        }
+
+        // Deteksi klik kanan di area kosong explorer
+        document.getElementById('main-container').oncontextmenu = (e) => {
+            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
+                e.preventDefault();
+                const menu = document.getElementById('ctx-empty');
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            }
+        };
+        
+        // Tutup semua menu saat klik kiri di mana saja
+        window.onclick = () => {
+            document.getElementById('ctx-menu').style.display = 'none';
+            document.getElementById('ctx-sidebar').style.display = 'none';
+            document.getElementById('ctx-empty').style.display = 'none';
+        };
 
         // Drag & Drop
         window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-zone').style.display = 'flex'; };
