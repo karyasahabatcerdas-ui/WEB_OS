@@ -145,13 +145,19 @@
         async function renameItem() {
             const newName = prompt("Nama baru:", selectedName);
             if (newName && newName !== selectedName) {
+                const statusEl = document.getElementById('status'); // Pastikan id="status" ada di toolbar
+                if (statusEl) statusEl.innerText = "Renaming...";
+                
                 await fetch(GAS_URL, { 
                     method: 'POST', 
                     body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
                 });
+                
+                if (statusEl) statusEl.innerText = "Done";
                 loadData(activeFolderId);
             }
         }
+
 
         async function deleteItem() {
             if (confirm(`Hapus "${selectedName}" ke Trash?`)) {
