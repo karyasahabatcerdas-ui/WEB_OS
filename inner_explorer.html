@@ -91,6 +91,10 @@
         <input type="text" id="path-input" readonly 
                style="flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace;">
     </div>
+
+    <!-- Tambahkan ini di dalam div class="toolbar" -->
+<span id="status" style="font-size:10px; color:gray; margin-left:10px;">Ready</span>
+
 </div>
 
 
@@ -143,25 +147,22 @@
         }
 
         async function renameItem() {
-            const newName = prompt("Masukkan nama baru:", selectedName);
+            if (!selectedId) return;
+            const newName = prompt("Nama baru:", selectedName);
             if (newName && newName !== selectedName) {
-                // Cek dulu apakah elemen status ada, jika tidak ada jangan dipaksa set innerText
-                const statusEl = document.getElementById('status');
-                if (statusEl) statusEl.innerText = "Renaming...";
+                // Pakai optional chaining (?) agar jika status ga ada, kode ga mati
+                document.getElementById('status')?.innerText = "Renaming..."; 
                 
-                try {
-                    await fetch(GAS_URL, { 
-                        method: 'POST', 
-                        body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
-                    });
-                    if (statusEl) statusEl.innerText = "Done";
-                    loadData(activeFolderId);
-                } catch (e) {
-                    alert("Gagal Rename!");
-                    if (statusEl) statusEl.innerText = "Error";
-                }
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'RENAME', id: selectedId, newName: newName }) 
+                });
+                
+                if (document.getElementById('status')) document.getElementById('status').innerText = "Done";
+                loadData(activeFolderId);
             }
         }
+
 
 
 
