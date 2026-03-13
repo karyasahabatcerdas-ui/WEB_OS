@@ -69,13 +69,23 @@
     </div>
 
     <div class="toolbar">
-        <button class="nav-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
-        <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
-        <input type="text" id="path-input" placeholder="Search..." onkeyup="filterList()">
-        <!-- PASTIKAN BARIS DI BAWAH INI ADA -->
-        <div id="status" style="font-size: 10px; color: #888; margin-left: 10px;">Ready</div>
-        <button onclick="loadData(lastParentId)">⬅️ Back</button>
+        <!-- Tombol Back yang Pro (panggil lastParentId) -->
+        <button class="nav-btn" onclick="loadData(lastParentId)" title="Back">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        
+        <!-- Tombol Refresh -->
+        <button class="nav-btn" onclick="loadData()" title="Refresh">
+            <i class="fas fa-sync"></i>
+        </button>
+
+        <!-- Address Bar / Search -->
+        <input type="text" id="path-input" placeholder="Search files..." onkeyup="filterList()">
+
+        <!-- Status Loading -->
+        <div id="status" style="font-size: 10px; color: #888; margin-left: 10px; min-width: 50px;">Ready</div>
     </div>
+
 
 
 
@@ -388,7 +398,8 @@
                 }
 
                 // --- 5. Render UI ---
-                render(data);
+               // Menjadi ini (sesuai nama fungsi yang sudah kita buat sebelumnya)
+                renderMainContent(data);
 
                 if (statusEl) statusEl.innerText = "Done";
             } catch (err) {
@@ -438,6 +449,19 @@
             menu.style.display = 'block';
             menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
         }
+
+        function filterList() {
+            const val = document.getElementById('path-input').value.split('/').pop().trim().toLowerCase();
+            const rows = document.querySelectorAll('.file-row');
+            
+            rows.forEach(row => {
+                // Cari teks di dalam kolom pertama (nama file)
+                const name = row.querySelector('div:first-child').innerText.toLowerCase();
+                row.style.display = name.includes(val) ? 'grid' : 'none';
+            });
+        }
+
+
         window.onclick = () => document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none');
 
         init();
