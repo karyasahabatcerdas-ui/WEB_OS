@@ -8,25 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <!-- Monaco Editor Loader -->
     <!-- Muat loader utama -->
-    <script src="https://cdnjs.cloudflare.com"></script>
 
-    <script>
-        // Konfigurasi agar Monaco tahu di mana mencari file pendukungnya
-        require.config({ 
-            paths: { 'vs': 'https://cdnjs.cloudflare.com' } 
-        });
-
-        // Supaya fitur IntelliSense (auto-complete) tidak error 404 (Cross-Origin)
-        window.MonacoEnvironment = {
-            getWorkerUrl: function (workerId, label) {
-                const base = "https://cdnjs.cloudflare.com";
-                return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-                    self.MonacoEnvironment = { baseUrl: "${base}" };
-                    importScripts("${base}/base/worker/workerMain.js");
-                `)}`;
-            }
-        };
-    </script>
 
 
 
