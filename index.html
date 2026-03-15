@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <!-- Monaco Editor Loader -->
     <script src="https://cdnjs.cloudflare.com"></script>
+    <script>
+    // Konfigurasi path segera setelah loader dimuat
+    require.config({ 
+        paths: { 'vs': 'https://cdnjs.cloudflare.com' } 
+        });
+    </script>
 
     <style>
         :root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }
@@ -84,7 +90,8 @@
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
         let windowCount = 0;
-        let editors = {};
+        //let editors = {};
+        const editors = {};
 
         async function sha256(str) {
             const buf = new TextEncoder().encode(str);
@@ -205,6 +212,9 @@
             document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
 
+        // Simpan editor instance di object global
+        
+
         function openEditor(fileId, fileName) {
             const winId = `edit-${Date.now()}`;
             const winHtml = `
@@ -213,17 +223,20 @@
                         <span>📝 Editor: ${fileName}</span>
                         <div class="win-controls">
                             <button onclick="saveFileContent('${winId}', '${fileId}')"><i class="fas fa-save"></i> Save</button>
-                            <button onclick="document.getElementById('${winId}').remove()">×</button>
+                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];">×</button>
                         </div>
                     </div>
-                    <div class="win-body"><div id="container-${winId}" style="width:100%; height:100%;"></div></div>
+                    <div class="win-body" style="height: calc(100% - 40px); overflow: hidden;">
+                        <div id="container-${winId}" style="width:100%; height:100%;"></div>
+                    </div>
                 </div>`;
+            
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 
-            // FIX: Load loader secara dinamis jika belum ada
+            // Memastikan loader ada sebelum inisialisasi
             if (typeof require === "undefined") {
                 const script = document.createElement('script');
-                script.src = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs/loader.min.js";
+                script.src = "https://cdnjs.cloudflare.com";
                 script.onload = () => initMonacoInWin(winId, fileId, fileName);
                 document.head.appendChild(script);
             } else {
@@ -231,25 +244,29 @@
             }
         }
 
-        
         function initMonacoInWin(winId, fileId, fileName) {
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/monaco-editor/0.34.1/min/vs' } });
+            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com' } });
+            
             require(['vs/editor/editor.main'], async function() {
                 try {
+                    // Ambil data file
                     const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
                     const data = await res.json();
                     
                     const ext = fileName.split('.').pop().toLowerCase();
-                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python' };
+                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
 
+                    // Inisialisasi Editor
                     editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
                         value: data.content || "",
                         language: langMap[ext] || 'plaintext',
                         theme: 'vs-dark',
-                        automaticLayout: true
+                        automaticLayout: true, // Sangat penting agar editor resize otomatis
+                        minimap: { enabled: false }
                     });
                 } catch (e) {
                     console.error("Gagal memuat isi file:", e);
+                    document.getElementById(`container-${winId}`).innerText = "Gagal memuat file.";
                 }
             });
         }
