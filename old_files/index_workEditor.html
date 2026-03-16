@@ -52,27 +52,17 @@
     <!-- 1. Login Screen -->
     <div id="login-screen" class="login-screen">
         <h2>WEB_OS Login</h2>
-        <form onsubmit="event.preventDefault(); attemptLogin();" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-            <input type="text" id="login-user" placeholder="Username" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
+        <form onsubmit="event.preventDefault(); attemptLogin();" style="display:flex; flex-direction:column; align-items:center;">
             <input type="password" id="login-pass" placeholder="Password" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
             <button type="submit" style="margin-top:15px; padding:8px 30px; border-radius:20px; border:none; background:var(--accent); color:white; cursor:pointer;">Unlock</button>
         </form>
     </div>
-
 
     <!-- 2. Desktop Area (Cukup SATU saja) -->
     <div id="desktop" style="width: 100vw; height: calc(100vh - 50px); position: relative; background: url('https://images.unsplash.com') center/cover;" oncontextmenu="showDesktopCtx(event)">
         
         <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
         <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
-            <div class="menu-user-header" onclick="openQuickSettings(); toggleStartMenu()" style="display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:10px; cursor:pointer; border-radius:8px; transition:0.2s;">
-                <img src="${userPhoto}" style="width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #ddd;">
-                <div style="display:flex; flex-direction:column;">
-                    <span style="font-weight:bold; font-size:14px; color:#333;">${username}</span>
-                    <span style="font-size:11px; color:#888;">System Settings</span>
-                </div>
-            </div>
-            <hr style="border:0; border-top:1px solid #eee; margin-bottom:10px;">
             <div class="menu-item" onclick="openEditor('', 'Untitled.js'); toggleStartMenu()"> <i class="fas fa-file-code"></i> Text Editor  </div>
             <hr>
             <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
@@ -113,9 +103,6 @@
         let isMonacoReady = false; // Flag status Monaco
         let isMonacoLoading = false; // Flag tambahan supaya tidak load berkali-kali
         let monacoQueue = [];      // Antrean fungsi jika belum ready  
-
-        const username = sessionStorage.getItem("user") || "User";
-        const userPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name={username}&background=random&color=fff`;
 
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
@@ -180,63 +167,13 @@
         }
 
         async function attemptLogin() {
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
-            const passHash = await sha256(pass);
-            
-            let uuid = localStorage.getItem("webos_uuid") || self.crypto.randomUUID();
-            localStorage.setItem("webos_uuid", uuid);
-
-            Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
-
-            try {
-                // 1. Ambil IP Publik dari API Eksternal
-                const ipRes = await fetch('https://api.ipify.org');
-                const ipData = await ipRes.json();
-                const clientIP = ipData.ip;
-
-                // 2. Deteksi Browser & Device Type (navigator.userAgent)
-                const ua = navigator.userAgent;
-                let deviceType = "Desktop";
-                if (/Mobi|Android/i.test(ua)) deviceType = "Mobile";
-                if (/Tablet|iPad/i.test(ua)) deviceType = "Tablet";
-
-                // Deteksi Nama Browser Sederhana
-                let browserName = "Unknown";
-                if (ua.includes("Chrome")) browserName = "Chrome";
-                else if (ua.includes("Firefox")) browserName = "Firefox";
-                else if (ua.includes("Safari")) browserName = "Safari";
-                else if (ua.includes("Edge")) browserName = "Edge";
-
-                const deviceInfo = `${deviceType} (${browserName}) - IP: ${clientIP}`;
-
-                // 3. Kirim ke GAS
-                const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "LOGIN",
-                        username: user,
-                        password: passHash,
-                        uuid: uuid,
-                        device: deviceInfo // Mengirim string info lengkap ke parameter 'device'
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.status === "success") {
-                    Swal.close();
-                    document.getElementById('login-screen').style.display = 'none';
-                    sessionStorage.setItem("isAuth", "true");
-                    initOS();
-                } else {
-                    Swal.fire("Access Denied", result.msg, "error");
-                }
-            } catch (e) {
-                Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
-            }
+            const input = document.getElementById('login-pass').value;
+            if (await sha256(input) === STORED_HASH) {
+                document.getElementById('login-screen').style.display = 'none';
+                sessionStorage.setItem("isAuth", "true");
+                initOS();
+            } else { alert("Akses Ditolak!"); }
         }
-
-
 
         function initOS() {
             updateClock(); setInterval(updateClock, 1000);
@@ -766,64 +703,8 @@
             });
         }
 
-        function openQuickSettings() {
-            const winId = 'win-settings';
-            if(document.getElementById(winId)) { focusWin(winId); return; }
 
-            const winHtml = `
-                <div id="${winId}" class="sub-window" style="width:500px; height:450px; top:100px; left:100px;">
-                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
-                        <span>⚙️ System Settings</span>
-                        <div class="win-controls">
-                            <button onclick="closeWin('${winId}')"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-                    <div class="win-body" style="padding:15px; background:#f9f9f9; overflow-y:auto; font-size:13px;">
-                        <!-- Account Section -->
-                        <div style="margin-bottom:20px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px;">👤 Account & Security</label>
-                            <input type="text" id="set-username" placeholder="Username Baru" style="width:90%; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:5px;">
-                            <input type="password" id="set-password" placeholder="Password Baru" style="width:90%; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:5px;">
-                            <input type="text" id="set-avatar" placeholder="URL Foto Avatar" style="width:90%; padding:8px; border:1px solid #ddd; border-radius:5px;">
-                        </div>
 
-                        <!-- Personalization -->
-                        <div style="margin-bottom:20px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px;">🎨 Appearance</label>
-                            <select id="set-bg" onchange="changeDesktopBg(this.value)" style="width:95%; padding:8px; margin-bottom:5px; border-radius:5px;">
-                                <option value="">-- Pilih Background --</option>
-                                <option value="https://images.unsplash.com">Mountain</option>
-                                <option value="https://images.unsplash.com">Forest</option>
-                            </select>
-                            <select id="set-editor-theme" onchange="changeEditorTheme(this.value)" style="width:95%; padding:8px; border-radius:5px;">
-                                <option value="vs-dark">Monaco: Dark</option>
-                                <option value="vs">Monaco: Light</option>
-                                <option value="hc-black">Monaco: High Contrast</option>
-                            </select>
-                        </div>
-
-                        <!-- System -->
-                        <div style="margin-bottom:20px;">
-                            <label style="font-weight:bold; display:block; margin-bottom:5px;">🌐 System & Region</label>
-                            <select id="set-region" style="width:95%; padding:8px; border-radius:5px;">
-                                <option value="id-ID">Indonesia (WIB)</option>
-                                <option value="en-US">English (US)</option>
-                            </select>
-                        </div>
-
-                        <button onclick="saveAllSettings()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Terapkan Semua Perubahan</button>
-                    </div>
-                </div>`;
-            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-        }
-
-        function changeEditorTheme(theme) {
-            Object.values(editors).forEach(editor => {
-                monaco.editor.setTheme(theme);
-            });
-        }
-
-        document.getElementById('desktop').style.backgroundImage = "url('" + url + "')";
 
     </script>
 </body>
