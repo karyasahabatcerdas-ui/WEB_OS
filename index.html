@@ -784,13 +784,13 @@
                                         <div style="display:flex; align-items:center; gap:10px;">
                                             <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
                                             <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
-                                                <input type="checkbox" checked onchange="toggleSettingInput('set-username', this)"> Lock
+                                                <input id="chk-user" type="checkbox" checked onchange="toggleSettingInput('set-username', this)"> Lock
                                             </label>
                                         </div>
                                         <div style="display:flex; align-items:center; gap:10px;">
                                             <input type="password" id="set-password" placeholder="Password Baru" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
                                             <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
-                                                <input type="checkbox" checked onchange="toggleSettingInput('set-password', this)"> Lock
+                                                <input id="chk-pass" type="checkbox" checked onchange="toggleSettingInput('set-password', this)"> Lock
                                             </label>
                                         </div>
                                     </div>
