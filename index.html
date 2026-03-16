@@ -105,7 +105,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzrTS25EM6SMKdgq0eOIeN7eY-k04SDqkRn73eVh78OiWMHxB_yjF31fcKS0rhwLDxI/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwPwUpaoKGq9IsaNsefxqkuCeKhtbB7DBOccmhCBDrR6j2jRna0Ob3pbL2T_WifYoq3/exec
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -781,7 +781,7 @@
                                         <p style="font-size:10px; color:#888; margin-top:8px;">Klik gambar untuk ganti</p>
                                     </div>
                                     <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
-                                        <form>
+                                        
                                         <div style="display:flex; align-items:center; gap:10px;">
                                             <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
                                             <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
@@ -794,7 +794,7 @@
                                                 <input id="chk-pass" type="checkbox" checked onchange="toggleSettingInput('set-password', this)"> Lock
                                             </label>
                                         </div>
-                                        </form>
+                                       
                                     </div>
                                 </div>
                             </div>
@@ -1047,6 +1047,42 @@
             }
         }
 
+        function updateClock() {
+            const clockEl = document.getElementById('clock');
+            if (!clockEl) return;
+
+            // Ambil setting dari localStorage (Default: Indo, 24h)
+            const region = localStorage.getItem("sysRegion") || "id-ID";
+            const hour12 = localStorage.getItem("sysHourFormat") === "12h";
+            const dateFormat = localStorage.getItem("sysDateFormat") || "dd/MM/yyyy";
+
+            const now = new Date();
+
+            // 1. Format Jam
+            const timeStr = now.toLocaleTimeString(region, { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: hour12 
+            });
+
+            // 2. Format Tanggal (Sesuai pilihan user)
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const dayName = now.toLocaleDateString(region, { weekday: 'long' });
+            const monthName = now.toLocaleDateString(region, { month: 'long' });
+
+            let dateStr = dateFormat
+                .replace("dddd", dayName)
+                .replace("MMMM", monthName)
+                .replace("dd", day)
+                .replace("MM", month)
+                .replace("yyyy", year);
+
+            // Tampilkan (Jam di atas, Tanggal kecil di bawahnya atau sejajar)
+            clockEl.innerHTML = `<div style="text-align:right;">${timeStr}<br><span style="font-size:10px; font-weight:normal;">${dateStr}</span></div>`;
+        }
 
 
 
