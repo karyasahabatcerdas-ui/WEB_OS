@@ -214,7 +214,7 @@
         }
 
         // 1. Definisikan URL secara GLOBAL di paling atas script
-        const MONACO_BASE = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+        const MONACO_BASE = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.55.1/min/vs";
 
         // 2. Setup Environment GLOBAL agar selalu siap (mengatasi error vs/vs)
         window.MonacoEnvironment = {
@@ -239,7 +239,7 @@
                         <span>📝 Editor: ${fileName}</span>
                         <div class="win-controls">
                             <button onclick="saveFileContent('${winId}', '${fileId}')" style="color:white; font-weight:bold;"><i class="fa-solid fa-save"></i> SAVE</button>
-                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];" style="color:white; font-weight:bold;"><i class="fa-solid fa-close"></i> X</button>
+                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];" style="color:white; font-weight:bold;"><i class="fa-solid fa-close"></i></button>
                         </div>
                     </div>
                     <div class="win-body" style="flex: 1; position: relative; overflow: hidden;">
