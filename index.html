@@ -156,6 +156,12 @@
             if (!editors[winId]) return;
             const content = editors[winId].getValue(); // Ambil teks dari Monaco
             
+            // LOGIKA EKSPLISIT: Jika file baru (tidak ada ID), paksa Save As
+            if (!fileId || fileId === "" || fileId === "undefined") {
+                saveFileAs(winId, fileId);
+                return;
+            }
+
             try {
                 const response = await fetch(GAS_URL, {
                     method: "POST",
@@ -586,24 +592,43 @@
         // 1. Fungsi Save As (Buat file baru dari isi editor)
         async function saveFileAs(winId, fileId) {
             if (!editors[winId]) return;
-            const content = editors[winId].getValue();
-            const oldName = document.querySelector(`#${winId} .win-header span`).innerText.replace('📝 Editor: ', '');
+            const content = editors[winId].getValue();           
+
+            //const oldName = document.querySelector(`#${winId} .win-header span`).innerText.replace('📝 Editor: ', '');
+
+            // Ambil nama dari header secara aman
+            const headerSpan = document.querySelector(`#${winId} .win-header span`);
+            const currentName = headerSpan ? headerSpan.innerText.replace('📝 ', '') : "new_file.js";
             
             const newName = prompt("Simpan sebagai (Nama File Baru):", "copy_of_" + oldName);
             if (!newName) return;
 
             try {
+                // Jika fileId kosong (file baru), kita gunakan aksi UPSERT_FILE di GAS
+                const actionType = (fileId && fileId !== "") ? "COPY_FILE" : "UPSERT_FILE";
+                const payload = {
+                    action: actionType,
+                    id: fileId,
+                    newName: newName, // Untuk COPY_FILE
+                    name: newName,    // Untuk UPSERT_FILE
+                    content: content,
+                    base64: btoa(content), // GAS UPSERT butuh base64
+                    mimeType: "text/plain",
+                    folderId: ROOT_ID
+                    };
+
                 const res = await fetch(GAS_URL, {
                     method: "POST",
                     body: JSON.stringify({ action: "COPY_FILE", id: fileId, newName: newName, content: content })
                 });
                 const data = await res.json();
                 if(data.status === "success") {
-                    alert("File baru berhasil dibuat: " + data.name);
+                    alert("File baru berhasil dibuat: " + (data.name || newName));
+                    closeWin(winId); // Tutup yang lama (Untitled)
                     // Opsional: Langsung buka file barunya
-                    openEditor(data.id, data.name);
+                    openEditor(data.id, data.name || newName); // Buka yang sudah ada ID-nya
                 }
-            } catch (e) { alert("Gagal Save As!"); }
+            } catch (e) { alert("Gagal menyimpan file baru!"); }
         }
 
         // 2. Fungsi Keyboard Shortcut Ctrl+S (Internal Monaco)
