@@ -145,7 +145,9 @@
                     <div class="win-header" onmousedown="dragWin(this.parentElement)">
                         <span>📁 ${title}</span>
                         <div class="win-controls">
-                            <button onclick="closeWin('${winId}', '${appId}')">×</button>
+                            <button onclick="minimizeWin('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
+                            <button onclick="maximizeWin('${winId}')" title="Maximize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-maximize"></i></button>
+                            <button onclick="closeEditor('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
                     <div class="win-body">
