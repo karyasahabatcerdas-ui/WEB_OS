@@ -98,6 +98,9 @@
         const editors = {};
         const MONACO_VER = "0.53.0"; 
         const MONACO_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VER}/min/vs`;
+        let isMonacoReady = false; // Flag status Monaco
+        let monacoQueue = [];      // Antrean fungsi jika belum ready
+
 
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
@@ -109,6 +112,32 @@
                 return `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`;
             }
         };
+
+        function loadMonacoCore() {
+            if (window.require) { 
+                processQueue(); // Jika sudah ada require, langsung proses
+                return; 
+            }
+
+            const script = document.createElement('script');
+            script.src = `${MONACO_BASE}/loader.min.js`;
+            script.onload = () => {
+                require.config({ paths: { 'vs': MONACO_BASE } });
+                require(['vs/editor/editor.main'], function() {
+                    isMonacoReady = true;
+                    processQueue(); // Jalankan antrean yang tertunda
+                });
+            };
+            document.head.appendChild(script);
+        }
+
+        function processQueue() {
+            while (monacoQueue.length > 0) {
+                const item = monacoQueue.shift();
+                openEditor(item.id, item.name); // Buka editor yang tadi sempat tertunda
+            }
+        }
+
 
         async function sha256(str) {
             const buf = new TextEncoder().encode(str);
@@ -400,6 +429,13 @@
         // 1. KONFIGURASI GLOBAL (Ganti versi di sini saja)
 
         function openEditor(fileId, fileName) {
+            // Jika belum ready, simpan ke antrean dan jalankan loader
+            if (!isMonacoReady) {
+                monacoQueue.push({ id: fileId, name: fileName });
+                loadMonacoCore(); // Panggil fungsi loader
+                return;
+            }
+
             const winId = `edit-${Date.now()}`;
             const appId = `app-${winId}`; // Tambahkan appId di sini
 
