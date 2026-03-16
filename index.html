@@ -373,9 +373,19 @@
                 </div>`;
             
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-            initMonacoInWin(winId, fileId, fileName);
+                        // Cek Loader
+            if (typeof require === "undefined") {
+                const script = document.createElement('script');
+                script.src = `${MONACO_BASE}/loader.min.js`;
+                script.onload = () => {
+                    require.config({ paths: { 'vs': MONACO_BASE } });
+                    initMonacoInWin(winId, fileId, fileName);
+                };
+                document.head.appendChild(script);
+            } else {
+                initMonacoInWin(winId, fileId, fileName);
+            }
         }
-
 
         function initMonacoInWin(winId, fileId, fileName) {
             require(['vs/editor/editor.main'], async function() {
