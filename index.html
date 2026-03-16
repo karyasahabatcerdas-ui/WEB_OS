@@ -92,7 +92,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzWhNSF2dr_uSExiUNz1QXa3GQoEC59HOl5ahkKt5tb739hOwEyitBJQkiSf1w48QYC/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwqEwjvTjANiMjA7E-iSSbzJ25oUSB1ZMic_1ck1koDS5dTY3tcfQ3Bl9ExXp2_u3Fm/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -545,20 +545,15 @@
                 try {
                     let finalContent = ""; 
 
-                    // LOGIKA EKSPLISIT: Cek apakah buka file eksis atau file baru
+                    // LOGIKA EKSPLISIT: Ambil konten jika ada ID
                     if (fileId && fileId !== "") {
-                        // Ambil data dari Google Apps Script
                         const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
                         const data = await res.json();
                         
+                        // Pastikan akses data.content
                         if (data && data.content !== undefined) {
                             finalContent = data.content;
-                        } else {
-                            finalContent = "// Gagal mengambil konten file.";
                         }
-                    } else {
-                        // File baru dari Start Menu, biarkan kosong
-                        finalContent = ""; 
                     }
 
                     const ext = fileName.split('.').pop().toLowerCase();
@@ -654,44 +649,49 @@
         // 1. Fungsi Save As (Buat file baru dari isi editor)
         async function saveFileAs(winId, fileId) {
             if (!editors[winId]) return;
-            const content = editors[winId].getValue();           
-
-            //const oldName = document.querySelector(`#${winId} .win-header span`).innerText.replace('📝 Editor: ', '');
-
-            // Ambil nama dari header secara aman
-            const headerSpan = document.querySelector(`#${winId} .win-header span`);
-            const currentName = headerSpan ? headerSpan.innerText.replace('📝 ', '') : "new_file.js";
+            const content = editors[winId].getValue();
             
-            const newName = prompt("Simpan sebagai (Nama File Baru):", "copy_of_" + oldName);
+            // AMBIL NAMA DARI HEADER SECARA AMAN
+            const headerSpan = document.querySelector(`#${winId} .win-header span`);
+            // Ganti 'oldName' dengan logika ini:
+            const currentName = headerSpan ? headerSpan.innerText.replace('📝 ', '') : "Untitled.js";
+            
+            const newName = prompt("Simpan sebagai (Nama File Baru):", currentName);
             if (!newName) return;
 
             try {
-                // Jika fileId kosong (file baru), kita gunakan aksi UPSERT_FILE di GAS
-                const actionType = (fileId && fileId !== "") ? "COPY_FILE" : "UPSERT_FILE";
+                // Cek apakah ini file baru atau copy dari file lama
+                const isNewFile = (!fileId || fileId === "" || fileId === "undefined");
+                const actionType = isNewFile ? "UPSERT_FILE" : "COPY_FILE";
+                
                 const payload = {
                     action: actionType,
                     id: fileId,
-                    newName: newName, // Untuk COPY_FILE
-                    name: newName,    // Untuk UPSERT_FILE
+                    name: newName,      // Untuk UPSERT
+                    newName: newName,   // Untuk COPY
                     content: content,
-                    base64: btoa(content), // GAS UPSERT butuh base64
+                    base64: btoa(unescape(encodeURIComponent(content))), // Base64 yang aman untuk karakter unik
                     mimeType: "text/plain",
                     folderId: ROOT_ID
-                    };
+                };
 
                 const res = await fetch(GAS_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "COPY_FILE", id: fileId, newName: newName, content: content })
+                    body: JSON.stringify(payload)
                 });
+                
                 const data = await res.json();
                 if(data.status === "success") {
-                    alert("File baru berhasil dibuat: " + (data.name || newName));
-                    closeWin(winId); // Tutup yang lama (Untitled)
-                    // Opsional: Langsung buka file barunya
-                    openEditor(data.id, data.name || newName); // Buka yang sudah ada ID-nya
+                    Swal.fire("Berhasil!", "File disimpan ke Drive.", "success");
+                    closeWin(winId); // Tutup jendela "Untitled"
+                    openEditor(data.id, data.name || newName); // Buka file yang baru dibuat (sudah ada ID-nya)
                 }
-            } catch (e) { alert("Gagal menyimpan file baru!"); }
+            } catch (e) { 
+                console.error(e);
+                Swal.fire("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
+            }
         }
+
 
         // 2. Fungsi Keyboard Shortcut Ctrl+S (Internal Monaco)
         function addEditorShortcuts(winId, fileId) {
