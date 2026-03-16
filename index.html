@@ -105,7 +105,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwPwUpaoKGq9IsaNsefxqkuCeKhtbB7DBOccmhCBDrR6j2jRna0Ob3pbL2T_WifYoq3/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxfpFq8FFO4AAF53h5VvFYzsoP3lfvUyNR5enoiJDf_shsASOFPi7Hy2B3FAfUeJcym/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -214,18 +214,22 @@
                         username: user,
                         password: passHash,
                         uuid: uuid,
-                        device: deviceInfo // Mengirim string info lengkap ke parameter 'device'
+                        device: deviceInfo, // Mengirim string info lengkap ke parameter 'device'
+                        wallpaper: wallpaper
                     })
                 });
                 
                 const result = await response.json();
                 if (result.status === "success") {
-                    console.log("habis dapat sukses :", result.status);
+                    //console.log("habis dapat sukses :", result.status);
                     Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
+
                     sessionStorage.setItem("isAuth", "true");
                     sessionStorage.setItem("userName", result.user);
                     sessionStorage.setItem("userPhoto", result.photo || "");
+                    sessionStorage.setItem("userWallpaper", result.wallpaper || "");
+ 
                     initOS();
                 } else {
                     Swal.fire("Access Denied", result.msg, "error");
@@ -238,15 +242,39 @@
 
 
         function initOS() {
-            updateClock(); setInterval(updateClock, 1000);
+            updateClock(); 
+            setInterval(updateClock, 1000);
             restoreCloudSession();
 
             const name = sessionStorage.getItem("userName") || "Guest";
             let photo = sessionStorage.getItem("userPhoto");
+            const bgUrl = sessionStorage.getItem("userWallpaper"); // Ambil URL Wallpaper
 
             // Fallback kalau photo kosong
             if (!photo || photo === "undefined") {
                 photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
+            }
+
+            // 1. Terapkan Wallpaper ke Desktop
+            const desktop = document.getElementById('desktop');
+            if (bgUrl && bgUrl !== "" && bgUrl !== "undefined") {
+                desktop.style.backgroundImage = "url('" + bgUrl + "')";
+                
+                // Ambil settingan mode (stretch/center/tile) dari localStorage
+                const bgMode = localStorage.getItem("desktopBgMode") || "stretch";
+                
+                // Terapkan style sesuai mode
+                if (bgMode === "stretch") {
+                    desktop.style.backgroundSize = "100% 100%";
+                    desktop.style.backgroundRepeat = "no-repeat";
+                } else if (bgMode === "center") {
+                    desktop.style.backgroundSize = "auto";
+                    desktop.style.backgroundRepeat = "no-repeat";
+                    desktop.style.backgroundPosition = "center";
+                } else { // tile
+                    desktop.style.backgroundSize = "auto";
+                    desktop.style.backgroundRepeat = "repeat";
+                }
             }
 
             // UPDATE LANGSUNG KE ELEMEN YANG SUDAH ADA
@@ -254,10 +282,12 @@
             const nameEl = document.getElementById('user-name-span');
 
             if (imgEl) imgEl.src = photo;
-            if (nameEl) nameEl.innerText = name;
+            if (nameEl) nameEl.innerText = name;                
+                document.getElementById('desktop').style.backgroundImage = `url('${bgUrl}')`;
+            }
 
 
-        }
+    
 
         function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
             windowCount++;
