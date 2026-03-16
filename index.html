@@ -238,7 +238,7 @@
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 
             // Variabel URL agar rapi dan tidak salah lagi
-            const baseUrl = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+            let baseUrl = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
 
             if (typeof require === "undefined") {
                 const script = document.createElement('script');
@@ -267,7 +267,7 @@
         // 1. Pastikan config hanya dipanggil sekali atau gunakan URL absolut
         // Jika menggunakan CDNJS, jangan gunakan path relatif 'vs'
         
-        const base = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+        let base = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
 
         require.config({ 
             paths: { 
