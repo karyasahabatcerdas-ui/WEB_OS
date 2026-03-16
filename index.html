@@ -145,9 +145,9 @@
                     <div class="win-header" onmousedown="dragWin(this.parentElement)">
                         <span>📁 ${title}</span>
                         <div class="win-controls">
-                            <button onclick="minimizeWin('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
+                            <button onclick="toggleMinimize('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
                             <button onclick="maximizeWin('${winId}')" title="Maximize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-maximize"></i></button>
-                            <button onclick="closeEditor('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                            <button onclick="closeWin('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
                     <div class="win-body">
@@ -157,7 +157,7 @@
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
             addToTaskbar(winId, appId, title);
         }
-
+        
         async function saveFileContent(winId, fileId) {
             if (!editors[winId]) return;
             const content = editors[winId].getValue(); // Ambil teks dari Monaco
@@ -225,6 +225,13 @@
             document.getElementById(id).remove();
             document.getElementById(appId).remove();
         }
+
+        function toggleMinimize(winId) {
+            const win = document.getElementById(winId);
+            win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+            const appId = `app-${winId}`;
+            document.getElementById(appId).classList.toggle('active');
+         }
 
         function toggleStartMenu() {
             const m = document.getElementById('start-menu');
