@@ -203,19 +203,15 @@
                 console.log("habis dapat ip", clientIP);
 
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
-                const ua = navigator.userAgent;
+                const ua = navigator.userAgent; // info client pakai apa lengkap
                 let deviceType = "Desktop";
-                if (/Mobi|Android/i.test(ua)) deviceType = "Mobile";
-                if (/Tablet|iPad/i.test(ua)) deviceType = "Tablet";
+                if (/Mobi|Android|iPhone/i.test(ua)) {  //deteksi android bukan?
+                    deviceType= "Mobile";
+                    } else {
+                    deviceType= "Desktop";
+                    }
 
-                // Deteksi Nama Browser Sederhana
-                let browserName = "Unknown";
-                if (ua.includes("Chrome")) browserName = "Chrome";
-                else if (ua.includes("Firefox")) browserName = "Firefox";
-                else if (ua.includes("Safari")) browserName = "Safari";
-                else if (ua.includes("Edge")) browserName = "Edge";
-
-                const deviceInfo = `${deviceType} (${browserName}) - IP: ${clientIP}`;
+                const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
                 console.log("habis dapat browser :", deviceInfo);
                 // 3. Kirim ke GAS
                 const response = await fetch(GAS_URL, {
