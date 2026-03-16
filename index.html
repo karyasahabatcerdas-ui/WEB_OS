@@ -61,13 +61,14 @@
         
         <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
         <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
+            <div class="menu-item" onclick="openEditor('', 'Untitled.js'); toggleStartMenu()"> <i class="fas fa-file-code"></i> Text Editor  </div>
+            <hr>
             <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
             <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
             <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
             <hr>
             <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate</div>
             <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
-            <div class="menu-item" onclick="openEditor('', 'Untitled.js'); toggleStartMenu()"> <i class="fas fa-file-code"></i> Text Editor  </div>
         </div>
 
         <!-- Desktop Context Menu -->
@@ -473,7 +474,57 @@
 
         function initMonacoInWin(winId, fileId, fileName) {
             require(['vs/editor/editor.main'], async function() {
-               
+                try {
+                    let finalContent = ""; 
+
+                    // LOGIKA EKSPLISIT: Cek apakah buka file eksis atau file baru
+                    if (fileId && fileId !== "") {
+                        // Ambil data dari Google Apps Script
+                        const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
+                        const data = await res.json();
+                        
+                        if (data && data.content !== undefined) {
+                            finalContent = data.content;
+                        } else {
+                            finalContent = "// Gagal mengambil konten file.";
+                        }
+                    } else {
+                        // File baru dari Start Menu, biarkan kosong
+                        finalContent = ""; 
+                    }
+
+                    const ext = fileName.split('.').pop().toLowerCase();
+                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
+
+                    // BAGIAN INI TETAP (Settingan Monaco lo yang lengkap)
+                    editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
+                        value: finalContent,
+                        language: langMap[ext] || 'plaintext',
+                        theme: 'vs-dark',
+                        automaticLayout: true,
+                        fontSize: 14,
+                        fixedOverflowWidgets: true, 
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false
+                    });
+
+                    // BAGIAN INI TETAP
+                    addEditorShortcuts(winId, fileId);
+                    document.getElementById(winId).dataset.originalContent = finalContent;
+
+                } catch (err) {
+                    // CATCH HANYA UNTUK HANDLE ERROR (Network/Server Error)
+                    console.error("Critical Error pada initMonaco:", err);
+                    alert("Terjadi kesalahan sistem saat memuat editor.");
+                }
+            });
+        }
+
+
+        /*
+        function initMonacoInWin(winId, fileId, fileName) {
+            require(['vs/editor/editor.main'], 
+            async function() {               
                 try {
                     let content ="";
                     // Hanya fetch jika fileId ada (bukan file baru dari start menu)
@@ -507,7 +558,7 @@
                 }
             });
         }
-
+        */
         /* satu paket dipanggil dari closewin
         function closeEditor(winId) {
             const win = document.getElementById(winId);
