@@ -105,7 +105,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxX1rV8sCRd0TMehWVzy1hjTI1r5rHavo8diERiJhINj5mcD3ibZWlYzI7HCnf23Rpm/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyf-0xxgwb3ffB8ZcSBWbYS7Hu5JNdA1xKiKuRlrSNQ2l5F8L5MlCb0kMnSm6Z2fMfd/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -741,7 +741,7 @@
             if(document.getElementById(winId)) { focusWin(winId); return; }
 
             const currentName = sessionStorage.getItem("userName") || "User";
-            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com{currentName}`;
+            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name=${currentName}&background=random&color=fff`;
             const currentBg = localStorage.getItem("desktopBg") || "";
             const currentBgColor = localStorage.getItem("desktopBgColor") || "#2c3e50";
 
@@ -1009,6 +1009,40 @@
                     fontFamily: font
                 });
             });
+        }
+
+        async function saveAllSettings() {
+            Swal.fire({ title: 'Syncing to Cloud...', didOpen: () => { Swal.showLoading(); } });
+
+            const payload = {
+                action: "UPDATE_PROFILE",
+                uuid: localStorage.getItem("webos_uuid"),
+                username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
+                password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
+                // Kirim Base64 jika src mengandung "data:image" (berarti baru diupload)
+                avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? document.getElementById('preview-avatar').src : null,
+                bgData: document.getElementById('preview-bg-box').style.backgroundImage.includes("data:image") ? 
+                        document.getElementById('preview-bg-box').style.backgroundImage.slice(5, -2) : null
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    // Terapkan perubahan visual secara lokal
+                    localStorage.setItem("desktopBgColor", document.getElementById('set-bg-color').value);
+                    localStorage.setItem("desktopBgMode", document.getElementById('set-bg-mode').value);
+                    applyDesktopPreview();
+                    
+                    Swal.fire("Success!", "Profile and Wallpaper saved to Drive.", "success");
+                }
+            } catch (e) {
+                Swal.fire("Error", "Connection failed!", "error");
+            }
         }
 
 
