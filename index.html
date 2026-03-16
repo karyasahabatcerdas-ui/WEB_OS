@@ -188,13 +188,13 @@
             localStorage.setItem("webos_uuid", uuid);
 
             Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
-
+            console.log("habis swal loading");
             try {
                 // 1. Ambil IP Publik dari API Eksternal
                 const ipRes = await fetch('https://api.ipify.org');
                 const ipData = await ipRes.json();
                 const clientIP = ipData.ip;
-
+                 console.log("habis dapat ip", clientIP);
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
                 const ua = navigator.userAgent;
                 let deviceType = "Desktop";
@@ -209,7 +209,7 @@
                 else if (ua.includes("Edge")) browserName = "Edge";
 
                 const deviceInfo = `${deviceType} (${browserName}) - IP: ${clientIP}`;
-
+                console.log("habis dapat browser :", deviceInfo);
                 // 3. Kirim ke GAS
                 const response = await fetch(GAS_URL, {
                     method: "POST",
@@ -224,6 +224,7 @@
                 
                 const result = await response.json();
                 if (result.status === "success") {
+                    console.log("habis dapat sukses :", result.status);
                     Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
                     sessionStorage.setItem("isAuth", "true");
