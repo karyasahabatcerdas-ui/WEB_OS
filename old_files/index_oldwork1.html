@@ -786,81 +786,52 @@
             const winId = 'win-settings';
             if(document.getElementById(winId)) { focusWin(winId); return; }
 
-            // Ambil data saat ini untuk default value
-            const currentName = sessionStorage.getItem("userName") || "User";
-            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com{currentName}`;
-            const currentBg = localStorage.getItem("desktopBg") || "";
-
             const winHtml = `
-                <div id="${winId}" class="sub-window" style="width:550px; height:500px; top:80px; left:80px; background: var(--bg-panel); color: var(--text-main);">
+                <div id="${winId}" class="sub-window" style="width:500px; height:450px; top:100px; left:100px;">
                     <div class="win-header" onmousedown="dragWin(this.parentElement)">
-                        <span>⚙️ System Control Panel</span>
+                        <span>⚙️ System Settings</span>
                         <div class="win-controls">
                             <button onclick="closeWin('${winId}')"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
-                    <div class="win-body" style="padding:0; overflow:hidden; display:flex; flex-direction:column; background:#f0f2f5;">
-                        
-                        <div style="flex:1; overflow-y:auto; padding:20px;">
-                            
-                            <!-- A. ACCOUNT & SECURITY -->
-                            <div class="settings-section" style="background:white; padding:15px; border-radius:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                                <label style="font-weight:bold; color:var(--accent); display:block; margin-bottom:15px;">👤 Account & Security</label>
-                                
-                                <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
-                                    <div style="position:relative; cursor:pointer;" onclick="document.getElementById('avatar-input').click()">
-                                        <img id="preview-avatar" src="${currentPhoto}" style="width:60px; height:60px; border-radius:12px; object-fit:cover; border:2px solid #ddd;">
-                                        <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fas fa-camera"></i></div>
-                                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="previewImage(this, 'preview-avatar')">
-                                    </div>
-                                    <div style="flex:1;">
-                                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                            <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; background:#f9f9f9;">
-                                            <input type="checkbox" id="chk-user" title="Ubah Username" onchange="toggleInput('set-username', this)">
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px;">
-                                            <input type="password" id="set-password" placeholder="Password Baru" disabled style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; background:#f9f9f9;">
-                                            <input type="checkbox" id="chk-pass" title="Ubah Password" onchange="toggleInput('set-password', this)">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- B1. DESKTOP SETTING -->
-                            <div class="settings-section" style="background:white; padding:15px; border-radius:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                                <label style="font-weight:bold; color:var(--accent); display:block; margin-bottom:10px;">🎨 Desktop Appearance</label>
-                                
-                                <div style="display:flex; gap:15px; align-items:flex-start;">
-                                    <div style="text-align:center;">
-                                        <div id="preview-bg-box" style="width:100px; height:60px; border-radius:6px; background:url('${currentBg}') center/cover, #ccc; border:1px solid #ddd; cursor:pointer;" onclick="document.getElementById('bg-input').click()"></div>
-                                        <span style="font-size:10px; color:#888;">Klik untuk ubah</span>
-                                        <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImage(this, 'preview-bg-box', true)">
-                                        <button onclick="removeBg()" style="display:block; width:100%; margin-top:5px; font-size:10px; color:red; border:none; background:none; cursor:pointer;">Hapus Gambar</button>
-                                    </div>
-                                    <div style="flex:1;">
-                                        <select id="set-bg-mode" onchange="applyWallpaperLogic()" style="width:100%; padding:6px; margin-bottom:8px; border-radius:4px;">
-                                            <option value="stretch">Stretch (Penuhi Layar)</option>
-                                            <option value="center">Center (Tengah)</option>
-                                            <option value="tile">Tile (Berulang)</option>
-                                        </select>
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-size:12px;">Warna Dasar:</span>
-                                            <input type="color" id="set-bg-color" onchange="applyWallpaperLogic()" style="border:none; width:30px; height:30px; cursor:pointer;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                    <div class="win-body" style="padding:15px; background:#f9f9f9; overflow-y:auto; font-size:13px;">
+                        <!-- Account Section -->
+                        <div style="margin-bottom:20px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">👤 Account & Security</label>
+                            <input type="text" id="set-username" placeholder="Username Baru" style="width:90%; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:5px;">
+                            <input type="password" id="set-password" placeholder="Password Baru" style="width:90%; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:5px;">
+                            <input type="text" id="set-avatar" placeholder="URL Foto Avatar" style="width:90%; padding:8px; border:1px solid #ddd; border-radius:5px;">
                         </div>
 
-                        <div style="padding:15px; background:white; border-top:1px solid #eee; display:flex; justify-content:flex-end;">
-                            <button onclick="saveAllSettings()" style="padding:10px 25px; background:var(--accent); color:white; border:none; border-radius:20px; cursor:pointer; font-weight:bold;">Simpan Perubahan</button>
+                        <!-- Personalization -->
+                        <div style="margin-bottom:20px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">🎨 Appearance</label>
+                            <select id="set-bg" onchange="changeDesktopBg(this.value)" style="width:95%; padding:8px; margin-bottom:5px; border-radius:5px;">
+                                <option value="">-- Pilih Background --</option>
+                                <option value="https://images.unsplash.com">Mountain</option>
+                                <option value="https://images.unsplash.com">Forest</option>
+                            </select>
+                            <select id="set-editor-theme" onchange="changeEditorTheme(this.value)" style="width:95%; padding:8px; border-radius:5px;">
+                                <option value="vs-dark">Monaco: Dark</option>
+                                <option value="vs">Monaco: Light</option>
+                                <option value="hc-black">Monaco: High Contrast</option>
+                            </select>
                         </div>
+
+                        <!-- System -->
+                        <div style="margin-bottom:20px;">
+                            <label style="font-weight:bold; display:block; margin-bottom:5px;">🌐 System & Region</label>
+                            <select id="set-region" style="width:95%; padding:8px; border-radius:5px;">
+                                <option value="id-ID">Indonesia (WIB)</option>
+                                <option value="en-US">English (US)</option>
+                            </select>
+                        </div>
+
+                        <button onclick="saveAllSettings()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Terapkan Semua Perubahan</button>
                     </div>
                 </div>`;
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
         }
-
 
         function changeEditorTheme(theme) {
             Object.values(editors).forEach(editor => {
@@ -874,35 +845,6 @@
             // Tambahan supaya gambar nggak pecah/ngulang
             document.getElementById('desktop').style.backgroundSize = "cover";
             document.getElementById('desktop').style.backgroundPosition = "center";
-        }        
-
-        // 4. Logika Visual Wallpaper (Stretch, Center, Tile)
-        function applyWallpaperLogic() {
-            const desktop = document.getElementById('desktop');
-            const mode = document.getElementById('set-bg-mode').value;
-            const color = document.getElementById('set-bg-color').value;
-            const previewBox = document.getElementById('preview-bg-box');
-            const bgImg = previewBox.style.backgroundImage;
-
-            // Terapkan Warna Dasar
-            desktop.style.backgroundColor = color;
-
-            // Terapkan Gambar & Mode
-            desktop.style.backgroundImage = bgImg;
-            
-            if (mode === "stretch") {
-                desktop.style.backgroundSize = "100% 100%";
-                desktop.style.backgroundRepeat = "no-repeat";
-                desktop.style.backgroundPosition = "center";
-            } else if (mode === "center") {
-                desktop.style.backgroundSize = "auto";
-                desktop.style.backgroundRepeat = "no-repeat";
-                desktop.style.backgroundPosition = "center";
-            } else if (mode === "tile") {
-                desktop.style.backgroundSize = "auto";
-                desktop.style.backgroundRepeat = "repeat";
-                desktop.style.backgroundPosition = "top left";
-            }
         }
 
 
