@@ -89,7 +89,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbylRYTgO2x6garjl-M3cx4BTBKNnkF2vQ6gM34yr6idWp_mbUlbfzO5POeYqgph3FgX/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzWhNSF2dr_uSExiUNz1QXa3GQoEC59HOl5ahkKt5tb739hOwEyitBJQkiSf1w48QYC/exec"; 
         const ID_FDD = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const params = new URLSearchParams(window.location.search);
 
@@ -169,7 +169,9 @@
             });
             data.files.forEach(f => {
                 const ext = f.name.split('.').pop().toUpperCase();
-                list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen(${JSON.stringify(f)})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
+                //list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen(${JSON.stringify(f)})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
+
+                list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen({id:"${f.id}", name:"${f.name.replace(/'/g, "\\'")}"})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
             });
         }
 

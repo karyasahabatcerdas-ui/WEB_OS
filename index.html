@@ -8,8 +8,6 @@
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com"> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-
-
     <style>
         :root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }
         [data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }
@@ -21,11 +19,8 @@
         .start-btn:hover { background: rgba(0,0,0,0.1); }
 
         .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }
-
         .win-header { padding: 10px 15px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: bold; }
-
-        .win-body { flex: 1; overflow: hidden; background: white; }
-        
+        .win-body { flex: 1; overflow: hidden; background: white; }        
         .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }
 
         .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
@@ -92,11 +87,8 @@
     </div>
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
-
-
-
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbylRYTgO2x6garjl-M3cx4BTBKNnkF2vQ6gM34yr6idWp_mbUlbfzO5POeYqgph3FgX/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzWhNSF2dr_uSExiUNz1QXa3GQoEC59HOl5ahkKt5tb739hOwEyitBJQkiSf1w48QYC/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
