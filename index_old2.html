@@ -213,19 +213,6 @@
             document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
 
-        // 1. Definisikan URL secara GLOBAL di paling atas script
-        const MONACO_BASE = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
-
-        // 2. Setup Environment GLOBAL agar selalu siap (mengatasi error vs/vs)
-        window.MonacoEnvironment = {
-            getWorkerUrl: function (workerId, label) {
-                return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-                    self.MonacoEnvironment = { baseUrl: '${MONACO_BASE}' };
-                    importScripts('${MONACO_BASE}/base/worker/workerMain.js');
-                `)}`;
-            }
-        };
-
         function openEditor(fileId, fileName) {
             const winId = `edit-${Date.now()}`;
             const winHtml = `
@@ -238,10 +225,11 @@
                         onmousedown="dragWin(this.parentElement)">
                         <span>📝 Editor: ${fileName}</span>
                         <div class="win-controls">
-                            <button onclick="saveFileContent('${winId}', '${fileId}')" style="color:white; font-weight:bold;"><i class="fa-solid fa-save"></i> SAVE</button>
-                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];" style="color:white; font-weight:bold;"><i class="fa-solid fa-close"></i> X</button>
+                            <button onclick="saveFileContent('${winId}', '${fileId}')"  style="color:white; font-weight:bold; font-height:10px;"><i class="fa-solid fa-save"></i> SAVE</button>
+                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];" style="color:white; font-weight:bold;  font-height:10px;"><i class="fa-solid fa-close"></i></button>
                         </div>
                     </div>
+
                     <div class="win-body" style="flex: 1; position: relative; overflow: hidden;">
                         <div id="container-${winId}" style="width:100%; height:100%;"></div>
                     </div>
@@ -249,44 +237,83 @@
             
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 
+            // Variabel URL agar rapi dan tidak salah lagi
+            const baseUrl = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+
             if (typeof require === "undefined") {
                 const script = document.createElement('script');
-                script.src = `${MONACO_BASE}/loader.min.js`;
+                script.src = `${baseUrl}/loader.min.js`; // Link Loader yang benar
                 script.onload = () => {
-                    // Panggil config satu kali saja saat loader pertama kali masuk
-                    require.config({ paths: { 'vs': MONACO_BASE } });
+                    // Konfigurasi Environment agar fitur bahasa (IntelliSense) tidak 404
+                    window.MonacoEnvironment = {
+                        getWorkerUrl: function() {
+                            return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                                self.MonacoEnvironment = { baseUrl: "${baseUrl}" };
+                                importScripts("${baseUrl}/base/worker/workerMain.js");
+                            `)}`;
+                        }
+                    };
                     initMonacoInWin(winId, fileId, fileName);
                 };
                 document.head.appendChild(script);
             } else {
+                // Jika require sudah ada, langsung inisialisasi
                 initMonacoInWin(winId, fileId, fileName);
             }
         }
 
-        function initMonacoInWin(winId, fileId, fileName) {
-            // Gunakan require dari loader yang sudah dikonfigurasi di atas
-            require(['vs/editor/editor.main'], async function() {
-                try {
-                    const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
-                    const data = await res.json();                
-                    const ext = fileName.split('.').pop().toLowerCase();
-                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
 
-                    editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
-                        value: data.content || "",
-                        language: langMap[ext] || 'plaintext',
-                        theme: 'vs-dark',
-                        automaticLayout: true,
-                        fontSize: 14,
-                        fixedOverflowWidgets: true, 
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false
-                    });
-                } catch (e) {
-                    console.error("Gagal memuat isi file:", e);
+        function initMonacoInWin(winId, fileId, fileName) {
+        // 1. Pastikan config hanya dipanggil sekali atau gunakan URL absolut
+        // Jika menggunakan CDNJS, jangan gunakan path relatif 'vs'
+        
+        const base = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+
+        require.config({ 
+            paths: { 
+                'vs': `${base}` 
+            } 
+        });
+
+        // 2. Gunakan 'vs/editor/editor.main' tanpa tambahan prefix di depannya
+        require(['vs/editor/editor.main'], async function() {
+            try {
+                // Pastikan environment worker sudah siap SEBELUM editor.create
+                if (!window.MonacoEnvironment) {
+                    window.MonacoEnvironment = {
+                        getWorkerUrl: function (workerId, label) {
+                            //const base = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs';
+                            return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                                self.MonacoEnvironment = { baseUrl: '${base}' };
+                                importScripts('${base}/base/worker/workerMain.js');
+                            `)}`;
+                        }
+                    };
                 }
-            });
-        }
+
+                const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
+                const data = await res.json();                
+                const ext = fileName.split('.').pop().toLowerCase();
+                const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
+
+                editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
+                    value: data.content || "",
+                    language: langMap[ext] || 'plaintext',
+                    theme: 'vs-dark',
+                    automaticLayout: true,
+                    fontSize: 14,
+                    fixedOverflowWidgets: true, 
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false
+                });
+
+            } catch (e) {
+                console.error("Gagal memuat isi file:", e);
+            }
+        });
+    }
+
+
 
 
         window.onclick = () => {
