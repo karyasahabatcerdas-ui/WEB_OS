@@ -66,9 +66,12 @@
         <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
         <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
             <div class="menu-user-header" onclick="openQuickSettings(); toggleStartMenu()" style="display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:10px; cursor:pointer; border-radius:8px; transition:0.2s;">
-                <img src="${userPhoto}" style="width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #ddd;">
+                <!-- Tambahkan ID: user-photo-img -->
+                <img id="user-photo-img" src="" style="width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #ddd;">
+                
                 <div style="display:flex; flex-direction:column;">
-                    <span style="font-weight:bold; font-size:14px; color:#333;">${username}</span>
+                    <!-- Tambahkan ID: user-name-span -->
+                    <span id="user-name-span" style="font-weight:bold; font-size:14px; color:#333;">User</span>
                     <span style="font-size:11px; color:#888;">System Settings</span>
                 </div>
             </div>
@@ -113,9 +116,6 @@
         let isMonacoReady = false; // Flag status Monaco
         let isMonacoLoading = false; // Flag tambahan supaya tidak load berkali-kali
         let monacoQueue = [];      // Antrean fungsi jika belum ready  
-
-        const username = sessionStorage.getItem("user") || "User";
-        const userPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name={username}&background=random&color=fff`;
 
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
@@ -241,6 +241,23 @@
         function initOS() {
             updateClock(); setInterval(updateClock, 1000);
             restoreCloudSession();
+
+            const name = sessionStorage.getItem("userName") || "Guest";
+            let photo = sessionStorage.getItem("userPhoto");
+
+            // Fallback kalau photo kosong
+            if (!photo || photo === "undefined") {
+                photo = `https://ui-avatars.com/api/?name={encodeURIComponent(name)}&background=random&color=fff`;
+            }
+
+            // UPDATE LANGSUNG KE ELEMEN YANG SUDAH ADA
+            const imgEl = document.getElementById('user-photo-img');
+            const nameEl = document.getElementById('user-name-span');
+
+            if (imgEl) imgEl.src = photo;
+            if (nameEl) nameEl.innerText = name;
+
+
         }
 
         function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
@@ -823,7 +840,14 @@
             });
         }
 
-        document.getElementById('desktop').style.backgroundImage = "url('" + url + "')";
+        function changeDesktopBg(path) { // Ganti parameter jadi 'path'
+            if (!path) return;
+            document.getElementById('desktop').style.backgroundImage = `url('${path}')`;
+            // Tambahan supaya gambar nggak pecah/ngulang
+            document.getElementById('desktop').style.backgroundSize = "cover";
+            document.getElementById('desktop').style.backgroundPosition = "center";
+        }
+
 
     </script>
 </body>
