@@ -663,68 +663,6 @@
         }
 
 
-        /*
-        function initMonacoInWin(winId, fileId, fileName) {
-            require(['vs/editor/editor.main'], 
-            async function() {               
-                try {
-                    let content ="";
-                    // Hanya fetch jika fileId ada (bukan file baru dari start menu)
-                    if (fileId && fileId !== "") {
-                        const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
-                        const data = await res.json();
-                        content = data.content || "";
-                    }
-                    //const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
-                    //const data = await res.json();
-                    
-                    const ext = fileName.split('.').pop().toLowerCase();
-
-                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
-                    editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
-                        value: data.content || "",
-                        language: langMap[ext] || 'plaintext',
-                        theme: 'vs-dark',
-                        automaticLayout: true,
-                        fontSize: 14,
-                        fixedOverflowWidgets: true, 
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false
-                    });
-                    // TAMBAHKAN BARIS INI:
-                    addEditorShortcuts(winId, fileId);
-                    // SIMPAN ISI ASLI di elemen jendela buat perbandingan nanti
-                    document.getElementById(winId).dataset.originalContent = data.content || "";
-                } catch (e) {
-                    console.error("Gagal memuat isi file:", e);
-                }
-            });
-        }
-        */
-        /* satu paket dipanggil dari closewin
-        function closeEditor(winId) {
-            const win = document.getElementById(winId);
-            if (!win) return;
-
-            // Cek apakah ada perubahan
-            const currentContent = editors[winId] ? editors[winId].getValue() : "";
-            const originalContent = win.dataset.originalContent || "";
-
-            // JIKA ADA PERUBAHAN, BARU NANYA
-            if (currentContent !== originalContent) {
-                if (!confirm("Ada perubahan yang belum disimpan. Yakin mau tutup?")) {
-                    return; // Batalkan tutup jika user pilih 'Cancel'
-                }
-            }
-
-            // Eksekusi hapus jika tidak ada perubahan atau user setuju tutup
-            if (editors[winId]) {
-                editors[winId].dispose(); 
-                delete editors[winId];
-            }
-            win.remove();
-        } */
-
         // 1. Fungsi Save As (Buat file baru dari isi editor)
         async function saveFileAs(winId, fileId) {
             if (!editors[winId]) return;
@@ -782,86 +720,6 @@
             });
         }
 
-        function openQuickSettings() {
-            const winId = 'win-settings';
-            if(document.getElementById(winId)) { focusWin(winId); return; }
-
-            // Ambil data saat ini untuk default value
-            const currentName = sessionStorage.getItem("userName") || "User";
-            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name=${currentName}`;
-            const currentBg = localStorage.getItem("desktopBg") || "";
-
-            const winHtml = `
-                <div id="${winId}" class="sub-window" style="width:550px; height:500px; top:80px; left:80px; background: var(--bg-panel); color: var(--text-main);">
-                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
-                        <span>⚙️ System Control Panel</span>
-                        <div class="win-controls">
-                            <button onclick="closeWin('${winId}')"><i class="fas fa-times"></i></button>
-                        </div>
-                    </div>
-                    <div class="win-body" style="padding:0; overflow:hidden; display:flex; flex-direction:column; background:#f0f2f5;">
-                        
-                        <div style="flex:1; overflow-y:auto; padding:20px;">
-                            
-                            <!-- A. ACCOUNT & SECURITY -->
-                            <div class="settings-section" style="background:white; padding:15px; border-radius:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                                <label style="font-weight:bold; color:var(--accent); display:block; margin-bottom:15px;">👤 Account & Security</label>
-                                
-                                <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
-                                    <div style="position:relative; cursor:pointer;" onclick="document.getElementById('avatar-input').click()">
-                                        <img id="preview-avatar" src="${currentPhoto}" style="width:60px; height:60px; border-radius:12px; object-fit:cover; border:2px solid #ddd;">
-                                        <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fas fa-camera"></i></div>
-                                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="previewImage(this, 'preview-avatar')">
-                                    </div>
-                                    <div style="flex:1;">
-                                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                            <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; background:#f9f9f9;">
-                                            <input type="checkbox" id="chk-user" title="Ubah Username" onchange="toggleInput('set-username', this)">
-                                        </div>
-                                        <div style="display:flex; align-items:center; gap:8px;">
-                                            <input type="password" id="set-password" placeholder="Password Baru" disabled style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; background:#f9f9f9;">
-                                            <input type="checkbox" id="chk-pass" title="Ubah Password" onchange="toggleInput('set-password', this)">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- B1. DESKTOP SETTING -->
-                            <div class="settings-section" style="background:white; padding:15px; border-radius:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                                <label style="font-weight:bold; color:var(--accent); display:block; margin-bottom:10px;">🎨 Desktop Appearance</label>
-                                
-                                <div style="display:flex; gap:15px; align-items:flex-start;">
-                                    <div style="text-align:center;">
-                                        <div id="preview-bg-box" style="width:100px; height:60px; border-radius:6px; background:url('${currentBg}') center/cover, #ccc; border:1px solid #ddd; cursor:pointer;" onclick="document.getElementById('bg-input').click()"></div>
-                                        <span style="font-size:10px; color:#888;">Klik untuk ubah</span>
-                                        <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImage(this, 'preview-bg-box', true)">
-                                        <button onclick="removeBg()" style="display:block; width:100%; margin-top:5px; font-size:10px; color:red; border:none; background:none; cursor:pointer;">Hapus Gambar</button>
-                                    </div>
-                                    <div style="flex:1;">
-                                        <select id="set-bg-mode" onchange="applyWallpaperLogic()" style="width:100%; padding:6px; margin-bottom:8px; border-radius:4px;">
-                                            <option value="stretch">Stretch (Penuhi Layar)</option>
-                                            <option value="center">Center (Tengah)</option>
-                                            <option value="tile">Tile (Berulang)</option>
-                                        </select>
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-size:12px;">Warna Dasar:</span>
-                                            <input type="color" id="set-bg-color" onchange="applyWallpaperLogic()" style="border:none; width:30px; height:30px; cursor:pointer;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div style="padding:15px; background:white; border-top:1px solid #eee; display:flex; justify-content:flex-end;">
-                            <button onclick="saveAllSettings()" style="padding:10px 25px; background:var(--accent); color:white; border:none; border-radius:20px; cursor:pointer; font-weight:bold;">Simpan Perubahan</button>
-                        </div>
-                    </div>
-                </div>`;
-            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-        }
-
-
         function changeEditorTheme(theme) {
             Object.values(editors).forEach(editor => {
                 monaco.editor.setTheme(theme);
@@ -876,34 +734,281 @@
             document.getElementById('desktop').style.backgroundPosition = "center";
         }        
 
-        // 4. Logika Visual Wallpaper (Stretch, Center, Tile)
-        function applyWallpaperLogic() {
-            const desktop = document.getElementById('desktop');
+ 
+
+        function openQuickSettings() {
+            const winId = 'win-settings';
+            if(document.getElementById(winId)) { focusWin(winId); return; }
+
+            const currentName = sessionStorage.getItem("userName") || "User";
+            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com{currentName}`;
+            const currentBg = localStorage.getItem("desktopBg") || "";
+            const currentBgColor = localStorage.getItem("desktopBgColor") || "#2c3e50";
+
+            const winHtml = `
+                <div id="${winId}" class="sub-window" style="width:650px; height:550px; top:50px; left:50px; background: #f4f7f9; display:flex; flex-direction:column;">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)" style="background:#fff; border-bottom:1px solid #ddd; color:#333;">
+                        <span>⚙️ System Control Panel</span>
+                        <div class="win-controls">
+                            <button onclick="closeWin('${winId}')" style="color:#333;"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="win-body" style="flex:1; display:flex; overflow:hidden;">
+                        <!-- Sidebar Navigasi -->
+                        <div style="width:180px; background:#fff; border-right:1px solid #ddd; padding:10px; display:flex; flex-direction:column; gap:5px;">
+                            <div class="nav-item active" onclick="switchSettingsTab('sec-account', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-user-circle"></i> Account</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-desktop', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-desktop"></i> Desktop</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-monaco', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-code"></i> Editor</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-system', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-globe"></i> Region & Time</div>
+                        </div>
+
+                        <!-- Content Area -->
+                        <div id="settings-content-area" style="flex:1; padding:20px; overflow-y:auto; position:relative;">
+                            
+                            <!-- A. ACCOUNT & SECURITY -->
+                            <div id="sec-account" class="settings-tab-content">
+                                <h3 style="margin-top:0; font-size:16px;">Account & Security</h3>
+                                <div style="display:flex; align-items:center; gap:20px; background:white; padding:20px; border-radius:12px; border:1px solid #eee;">
+                                    <div style="text-align:center;">
+                                        <div style="position:relative; width:80px; height:80px; margin:0 auto; cursor:pointer;" onclick="document.getElementById('avatar-input').click()">
+                                            <img id="preview-avatar" src="${currentPhoto}" style="width:80px; height:80px; border-radius:15px; object-fit:cover; border:2px solid var(--accent);">
+                                            <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;"><i class="fas fa-camera" style="font-size:10px;"></i></div>
+                                        </div>
+                                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-avatar', false)">
+                                        <p style="font-size:10px; color:#888; margin-top:8px;">Klik gambar untuk ganti</p>
+                                    </div>
+                                    <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
+                                            <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
+                                                <input type="checkbox" checked onchange="toggleSettingInput('set-username', this)"> Lock
+                                            </label>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <input type="password" id="set-password" placeholder="Password Baru" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
+                                            <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
+                                                <input type="checkbox" checked onchange="toggleSettingInput('set-password', this)"> Lock
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                                                <!-- B1. DESKTOP SETTING -->
+                            <div id="sec-desktop" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">Desktop Appearance</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    
+                                    <!-- Preview Wallpaper & Mode -->
+                                    <div style="display:flex; gap:20px; align-items:flex-start;">
+                                        <div style="text-align:center;">
+                                            <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
+                                                style="width:140px; height:85px; border-radius:10px; background:url('${currentBg}') center/cover, ${currentBgColor}; border:2px solid #ddd; cursor:pointer; position:relative; overflow:hidden;">
+                                                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; opacity:0; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Ubah Gambar</div>
+                                            </div>
+                                            <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-bg-box', true)">
+                                            <button onclick="clearDesktopImg()" style="margin-top:8px; border:none; background:none; color:#e74c3c; cursor:pointer; font-size:11px; font-weight:bold;"><i class="fas fa-eraser"></i> Hapus Gambar</button>
+                                        </div>
+
+                                        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+                                            <div>
+                                                <label style="font-size:11px; font-weight:bold; color:#666;">Display Mode:</label>
+                                                <select id="set-bg-mode" onchange="applyDesktopPreview()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                                    <option value="stretch">Stretch (Penuhi Layar)</option>
+                                                    <option value="center">Center (Tengah Asli)</option>
+                                                    <option value="tile">Tile (Berulang)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px; font-weight:bold; color:#666;">Background Color:</label>
+                                                <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                                                    <input type="color" id="set-bg-color" value="${currentBgColor}" onchange="applyDesktopPreview()" style="border:none; width:40px; height:35px; cursor:pointer; padding:0; background:none;">
+                                                    <span style="font-size:11px; color:#888;">Warna di bawah gambar</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="border:0; border-top:1px solid #eee;">
+
+                                    <!-- Windows Theme Selection -->
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Windows Theme:</label>
+                                        <select id="set-win-theme" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="dark">Dark Mode (Default)</option>
+                                            <option value="light">Light Mode</option>
+                                            <option value="bluedark">Deep Blue Ocean</option>
+                                            <option value="greendark">Forest Grey</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- B2. MONACO EDITOR SETTING -->
+                            <div id="sec-monaco" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">Monaco Editor Settings</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Editor Theme:</label>
+                                        <select id="set-monaco-theme" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="vs-dark">Dark (VS Code Style)</option>
+                                            <option value="vs">Light</option>
+                                            <option value="hc-black">High Contrast</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Font Family:</label>
+                                        <select id="set-monaco-font" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="'Consolas', 'Courier New', monospace">Consolas (Default)</option>
+                                            <option value="'Fira Code', monospace">Fira Code</option>
+                                            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                            <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                                                <!-- C. SYSTEM REGION & TIME -->
+                            <div id="sec-system" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">System Region & Time</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Region Setting:</label>
+                                        <select id="set-region" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="id-ID">Indonesia (id-ID)</option>
+                                            <option value="en-US">English (en-US)</option>
+                                            <option value="ja-JP">Japan (ja-JP)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Date Format:</label>
+                                        <select id="set-date-format" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="dd/MM/yyyy">DD/MM/YYYY (31/12/2024)</option>
+                                            <option value="MM/dd/yyyy">MM/DD/YYYY (12/31/2024)</option>
+                                            <option value="dddd, MMMM yyyy">Full Date (Selasa, Maret 2024)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Time Format:</label>
+                                        <select id="set-hour-format" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="24h">24-Hour (13:00:00)</option>
+                                            <option value="12h">12-Hour (01:00:00 PM)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div> <!-- End Content Area -->
+
+                        <!-- Tombol Save di Bawah (Sticky) -->
+                        <div style="padding:15px; background:white; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+                            <button onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
+                            <button onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Apply Changes</button>
+                        </div>
+                    </div> <!-- End win-body -->
+                </div>`;
+
+            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+        }
+
+        /* --- LOGIKA PENDUKUNG (Tulis di Luar Fungsi openQuickSettings) --- */
+
+        // 1. Switch Tab Sidebar
+        function switchSettingsTab(tabId, el) {
+            document.querySelectorAll('.settings-tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('active');
+                n.style.background = 'none';
+                n.style.fontWeight = 'normal';
+            });
+            
+            document.getElementById(tabId).style.display = 'block';
+            el.style.background = '#f0f0f0';
+            el.style.fontWeight = 'bold';
+        }
+
+        // 2. Lock/Unlock Checkbox Logic
+        function toggleSettingInput(targetId, chk) {
+            const input = document.getElementById(targetId);
+            input.disabled = chk.checked; // Checked = Lock
+            input.style.background = chk.checked ? "#f0f0f0" : "#fff";
+        }
+
+        // 3. Preview Image Logic (Avatar & Desktop)
+        function previewImageToTarget(input, targetId, isDiv) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    if (isDiv) {
+                        document.getElementById(targetId).style.backgroundImage = `url('${dataUrl}')`;
+                    } else {
+                        document.getElementById(targetId).src = dataUrl;
+                    }
+                    applyDesktopPreview(); // Update preview seketika
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 4. Desktop Wallpaper Preview Engine (Stretch, Center, Tile)
+        function applyDesktopPreview() {
+            const previewBox = document.getElementById('preview-bg-box');
             const mode = document.getElementById('set-bg-mode').value;
             const color = document.getElementById('set-bg-color').value;
-            const previewBox = document.getElementById('preview-bg-box');
-            const bgImg = previewBox.style.backgroundImage;
+            
+            // Update Preview Box
+            previewBox.style.backgroundColor = color;
+            if (mode === "stretch") {
+                previewBox.style.backgroundSize = "100% 100%";
+                previewBox.style.backgroundRepeat = "no-repeat";
+            } else if (mode === "center") {
+                previewBox.style.backgroundSize = "auto";
+                previewBox.style.backgroundRepeat = "no-repeat";
+            } else { // Tile
+                previewBox.style.backgroundSize = "50%"; // Diperkecil di preview agar terlihat efek tile
+                previewBox.style.backgroundRepeat = "repeat";
+            }
 
-            // Terapkan Warna Dasar
+            // TERAPKAN LANGSUNG KE DESKTOP (Visual Real-time)
+            const desktop = document.getElementById('desktop');
             desktop.style.backgroundColor = color;
-
-            // Terapkan Gambar & Mode
-            desktop.style.backgroundImage = bgImg;
+            desktop.style.backgroundImage = previewBox.style.backgroundImage;
             
             if (mode === "stretch") {
                 desktop.style.backgroundSize = "100% 100%";
                 desktop.style.backgroundRepeat = "no-repeat";
-                desktop.style.backgroundPosition = "center";
             } else if (mode === "center") {
                 desktop.style.backgroundSize = "auto";
                 desktop.style.backgroundRepeat = "no-repeat";
                 desktop.style.backgroundPosition = "center";
-            } else if (mode === "tile") {
+            } else {
                 desktop.style.backgroundSize = "auto";
                 desktop.style.backgroundRepeat = "repeat";
-                desktop.style.backgroundPosition = "top left";
             }
         }
+
+        // 5. Clear Desktop Image
+        function clearDesktopImg() {
+            document.getElementById('preview-bg-box').style.backgroundImage = 'none';
+            document.getElementById('bg-input').value = "";
+            applyDesktopPreview();
+        }
+
+        // 6. Global Monaco Update
+        function updateAllMonacoEditors() {
+            const theme = document.getElementById('set-monaco-theme').value;
+            const font = document.getElementById('set-monaco-font').value;
+            
+            // Update semua editor yang sedang terbuka dalam objek global editors
+            Object.values(editors).forEach(editor => {
+                monaco.editor.setTheme(theme);
+                editor.updateOptions({
+                    fontFamily: font
+                });
+            });
+        }
+
+
 
 
     </script>
