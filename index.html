@@ -246,7 +246,7 @@
 
             // Fallback kalau photo kosong
             if (!photo || photo === "undefined") {
-                photo = `https://ui-avatars.com/api/?name={encodeURIComponent(name)}&background=random&color=fff`;
+                photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
             }
 
             // UPDATE LANGSUNG KE ELEMEN YANG SUDAH ADA
@@ -788,7 +788,7 @@
 
             // Ambil data saat ini untuk default value
             const currentName = sessionStorage.getItem("userName") || "User";
-            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com{currentName}`;
+            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name=${currentName}`;
             const currentBg = localStorage.getItem("desktopBg") || "";
 
             const winHtml = `
