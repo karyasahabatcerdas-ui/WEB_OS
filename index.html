@@ -267,11 +267,11 @@
         // 1. Pastikan config hanya dipanggil sekali atau gunakan URL absolut
         // Jika menggunakan CDNJS, jangan gunakan path relatif 'vs'
         
-        const base1 = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
+        const base = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs";
 
         require.config({ 
             paths: { 
-                'vs': `${base1}` 
+                'vs': `${base}` 
             } 
         });
 
@@ -282,7 +282,7 @@
                 if (!window.MonacoEnvironment) {
                     window.MonacoEnvironment = {
                         getWorkerUrl: function (workerId, label) {
-                            const base = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs';
+                            //const base = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs';
                             return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
                                 self.MonacoEnvironment = { baseUrl: '${base}' };
                                 importScripts('${base}/base/worker/workerMain.js');
