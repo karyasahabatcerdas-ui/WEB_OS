@@ -22,10 +22,25 @@
         .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
         .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
         .start-btn:hover { background: rgba(0,0,0,0.1); }
-
+        /*
         .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }
+        */
         .win-header { padding: 10px 15px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: bold; }
+        /*
         .win-body { flex: 1; overflow: hidden; background: white; }
+        */
+        .sub-window {
+        background: #1e1e1e; /* Warna gelap khas VS Code */
+        border: 1px solid #444;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        overflow: hidden;
+        }
+        .win-body {
+            background: #1e1e1e;
+            min-height: 200px; /* Minimal tinggi agar tidak kosong */
+        }
+
+
         .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }
 
         .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
