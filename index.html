@@ -91,7 +91,7 @@
         const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
         let windowCount = 0;
-        let editors = {};
+        const editors = {};
 
         async function sha256(str) {
             const buf = new TextEncoder().encode(str);
@@ -215,35 +215,40 @@
         function openEditor(fileId, fileName) {
             const winId = `edit-${Date.now()}`;
             const winHtml = `
-                <div id="${winId}" class="sub-window" style="width:800px; height:550px; top:60px; left:120px; z-index:1000;" onmousedown="focusWin('${winId}')">
-                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
+                <div id="${winId}" class="sub-window" 
+                    style="width:800px; height:550px; top:60px; left:120px; z-index:1000; 
+                            display: flex; flex-direction: column; background: #1e1e1e; border: 1px solid #444;" 
+                    onmousedown="focusWin('${winId}')">
+                    
+                    <div class="win-header" style="height: 40px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" 
+                        onmousedown="dragWin(this.parentElement)">
                         <span>📝 Editor: ${fileName}</span>
                         <div class="win-controls">
                             <button onclick="saveFileContent('${winId}', '${fileId}')"><i class="fas fa-save"></i> Save</button>
                             <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];">×</button>
                         </div>
                     </div>
-                    <!-- FIX: win-body HARUS punya tinggi agar monaco muncul -->
-                    <div class="win-body" style="flex-grow: 1; position: relative; overflow: hidden;">
+
+                    <div class="win-body" style="flex: 1; position: relative; overflow: hidden;">
                         <div id="container-${winId}" style="width:100%; height:100%;"></div>
                     </div>
                 </div>`;
             
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
 
-            // FIX: URL script.src HARUS mengarah ke loader.min.js, bukan worker.
+            // Variabel URL agar rapi dan tidak salah lagi
+            const baseUrl = "https://cdnjs.cloudflare.com";
+
             if (typeof require === "undefined") {
                 const script = document.createElement('script');
-                // Gunakan URL lengkap versi 0.34.1
-                script.src = "https://cdnjs.cloudflare.com";
+                script.src = `${baseUrl}/loader.min.js`; // Link Loader yang benar
                 script.onload = () => {
-                    // Tambahkan konfigurasi Environment agar fitur bahasa (IntelliSense) tidak 404
+                    // Konfigurasi Environment agar fitur bahasa (IntelliSense) tidak 404
                     window.MonacoEnvironment = {
                         getWorkerUrl: function() {
-                            const base = "https://cdnjs.cloudflare.com";
                             return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-                                self.MonacoEnvironment = { baseUrl: "${base}" };
-                                importScripts("${base}/base/worker/workerMain.js");
+                                self.MonacoEnvironment = { baseUrl: "${baseUrl}" };
+                                importScripts("${baseUrl}/base/worker/workerMain.js");
                             `)}`;
                         }
                     };
@@ -251,9 +256,11 @@
                 };
                 document.head.appendChild(script);
             } else {
+                // Jika require sudah ada, langsung inisialisasi
                 initMonacoInWin(winId, fileId, fileName);
             }
         }
+
 
 
         
