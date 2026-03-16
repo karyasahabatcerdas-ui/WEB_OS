@@ -245,6 +245,8 @@
                 script.src = `${baseUrl}/loader.min.js`; // Link Loader yang benar
                 script.onload = () => {
                     // Konfigurasi Environment agar fitur bahasa (IntelliSense) tidak 404
+                    //versi 1
+                    /*
                     window.MonacoEnvironment = {
                         getWorkerUrl: function() {
                             return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
@@ -252,7 +254,21 @@
                                 importScripts("${baseUrl}/base/worker/workerMain.js");
                             `)}`;
                         }
+                    }; */
+                     //versi 2
+                    window.MonacoEnvironment = {
+                        getWorkerUrl: function (workerId, label) {
+                            // Gunakan URL mentah dari CDN untuk worker
+                            const workerUrl = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs";
+                            
+                            // Trick data-uri untuk menghindari Cross-Origin error
+                            return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                                self.MonacoEnvironment = { baseUrl: '${workerUrl}' };
+                                importScripts('${workerUrl}/base/worker/workerMain.js');
+                            `)}`;
+                        }
                     };
+
                     initMonacoInWin(winId, fileId, fileName);
                 };
                 document.head.appendChild(script);
