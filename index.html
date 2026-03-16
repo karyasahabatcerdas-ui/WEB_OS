@@ -224,8 +224,8 @@
                         onmousedown="dragWin(this.parentElement)">
                         <span>📝 Editor: ${fileName}</span>
                         <div class="win-controls">
-                            <button onclick="saveFileContent('${winId}', '${fileId}')"><i class="fas fa-save"></i> Save</button>
-                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];">×</button>
+                            <button onclick="saveFileContent('${winId}', '${fileId}')"  style="color:white; font-weight:bold;"><i class="fas fa-save"></i> Save</button>
+                            <button onclick="document.getElementById('${winId}').remove(); delete editors['${winId}'];" style="color:white; font-weight:bold;">×</button>
                         </div>
                     </div>
 
@@ -267,7 +267,7 @@
         function initMonacoInWin(winId, fileId, fileName) {
             // FIX: URL Harus lengkap sampai ke folder /min/vs
             require.config({ 
-                paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs' } 
+                paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/' } 
             });
             
             require(['vs/editor/editor.main'], async function() {
