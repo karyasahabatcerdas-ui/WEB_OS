@@ -191,10 +191,17 @@
             console.log("habis swal loading");
             try {
                 // 1. Ambil IP Publik dari API Eksternal
-                const ipRes = await fetch('https://api.ipify.org');
-                const ipData = await ipRes.json();
-                const clientIP = ipData.ip;
-                 console.log("habis dapat ip", clientIP);
+                //const ipRes = await fetch('https://api.ipify.org');
+                //const ipData = await ipRes.json();
+                //const clientIP = ipData.ip; // Sekarang IP-nya beneran dapet string "110.xx.xx.xx"
+
+                await fetch('https://api.ipify.org')
+                    .then(response => response.text())
+                    .then(clientIP => console.log('IP Publik Anda:', clientIP))
+                    .catch(error => console.error('Error:', error));
+
+                console.log("habis dapat ip", clientIP);
+
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
                 const ua = navigator.userAgent;
                 let deviceType = "Desktop";
