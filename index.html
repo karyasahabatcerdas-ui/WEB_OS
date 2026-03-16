@@ -227,6 +227,8 @@
                     Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
                     sessionStorage.setItem("isAuth", "true");
+                    sessionStorage.setItem("userName", result.user);
+                    sessionStorage.setItem("userPhoto", result.photo || "");
                     initOS();
                 } else {
                     Swal.fire("Access Denied", result.msg, "error");
