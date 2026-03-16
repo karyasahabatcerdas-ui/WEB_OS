@@ -99,8 +99,8 @@
         const MONACO_VER = "0.53.0"; 
         const MONACO_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VER}/min/vs`;
         let isMonacoReady = false; // Flag status Monaco
-        let monacoQueue = [];      // Antrean fungsi jika belum ready
-
+        let isMonacoLoading = false; // Flag tambahan supaya tidak load berkali-kali
+        let monacoQueue = [];      // Antrean fungsi jika belum ready  
 
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
@@ -113,31 +113,39 @@
             }
         };
 
-        function loadMonacoCore() {
-            if (window.require) { 
-                processQueue(); // Jika sudah ada require, langsung proses
-                return; 
+        function loadMonacoCore(callback) {
+            // 1. Kalau sudah ready, langsung jalankan fungsi (callback)
+            if (isMonacoReady) {
+                if (callback) callback();
+                return;
             }
+
+            // 2. Simpan fungsi ke antrean
+            if (callback) monacoQueue.push(callback);
+
+            // 3. Jika sedang proses download, jangan download lagi
+            if (isMonacoLoading) return;
+
+            isMonacoLoading = true;
+            console.log("Memulai muat mesin Monaco...");
 
             const script = document.createElement('script');
             script.src = `${MONACO_BASE}/loader.min.js`;
             script.onload = () => {
                 require.config({ paths: { 'vs': MONACO_BASE } });
                 require(['vs/editor/editor.main'], function() {
+                    console.log("Mesin Monaco Standby!");
                     isMonacoReady = true;
-                    processQueue(); // Jalankan antrean yang tertunda
+                    isMonacoLoading = false;
+                    // Jalankan semua yang ngantri
+                    while (monacoQueue.length > 0) {
+                        const nextTask = monacoQueue.shift();
+                        nextTask();
+                    }
                 });
             };
             document.head.appendChild(script);
         }
-
-        function processQueue() {
-            while (monacoQueue.length > 0) {
-                const item = monacoQueue.shift();
-                openEditor(item.id, item.name); // Buka editor yang tadi sempat tertunda
-            }
-        }
-
 
         async function sha256(str) {
             const buf = new TextEncoder().encode(str);
@@ -430,11 +438,8 @@
 
         function openEditor(fileId, fileName) {
             // Jika belum ready, simpan ke antrean dan jalankan loader
-            if (!isMonacoReady) {
-                monacoQueue.push({ id: fileId, name: fileName });
-                loadMonacoCore(); // Panggil fungsi loader
-                return;
-            }
+            // Bungkus proses pembuatan jendela ke dalam fungsi anonim
+        const createTask = () => {    
 
             const winId = `edit-${Date.now()}`;
             const appId = `app-${winId}`; // Tambahkan appId di sini
@@ -512,7 +517,11 @@
             } else {
                 initMonacoInWin(winId, fileId, fileName);
             }
+
+            // Minta bantuan loadMonacoCore untuk eksekusi createTask
+            loadMonacoCore(createTask);
         }
+    }
 
         function initMonacoInWin(winId, fileId, fileName) {
             require(['vs/editor/editor.main'], async function() {
