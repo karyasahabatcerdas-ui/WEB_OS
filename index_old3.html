@@ -35,6 +35,19 @@
         .menu-item:hover { background: #f0f0f0; color: var(--accent); }
 
         #ctx-desktop { position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px; }
+
+
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; background-color: #252526;
+            min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+            z-index: 10002; border: 1px solid #444; padding: 5px 0;
+        }
+        .dropdown-content div { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; font-size: 12px; cursor: pointer; }
+        .dropdown-content div:hover { background-color: #094771; color: white; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content hr { border: 0; border-top: 1px solid #444; margin: 5px 0; }
+
     </style>
 </head>
 <body>
@@ -275,49 +288,92 @@
             }
         });
 
+        function triggerEditorCmd(winId, actionId) {
+            const editor = editors[winId];
+            if (editor) {
+                editor.focus();
+                editor.trigger('menu', actionId);
+            }
+        }
 
+        // OS Level Maximize
+        function maximizeWin(id) {
+            const win = document.getElementById(id);
+            if (win.style.width === "100vw") {
+                win.style.width = "850px"; win.style.height = "600px"; win.style.top = "60px"; win.style.left = "120px";
+            } else {
+                win.style.width = "100vw"; win.style.height = "calc(100vh - 50px)"; win.style.top = "0"; win.style.left = "0";
+            }
+            // Resize Monaco immediately
+            if (editors[id]) editors[id].layout();
+        }
 
 
         // 1. KONFIGURASI GLOBAL (Ganti versi di sini saja)
-
         function openEditor(fileId, fileName) {
             const winId = `edit-${Date.now()}`;
             const winHtml = `
                 <div id="${winId}" class="sub-window" 
-                    style="width:800px; height:550px; top:60px; left:120px; z-index:1000; 
-                            display: flex; flex-direction: column; background: #1e1e1e; border: 1px solid #444;" 
+                    style="width:850px; height:600px; top:60px; left:120px; z-index:1000; display: flex; flex-direction: column; background: #1e1e1e; border: 1px solid #444; resize: both; overflow: hidden;" 
                     onmousedown="focusWin('${winId}')">
                     
-                    <div class="win-header" style="height: 40px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" 
-                        onmousedown="dragWin(this.parentElement)">
-                        <span>📝 Editor: ${fileName}</span>
+                    <!-- 1. OS WINDOW HEADER (Min, Max, Close) -->
+                    <div class="win-header" style="height: 35px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" onmousedown="dragWin(this.parentElement)">
+                        <span>📝 ${fileName}</span>
                         <div class="win-controls">
-                            <button onclick="saveFileContent('${winId}', '${fileId}')" style="color:white; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-save"></i> SAVE</button>
-                            <button onclick="saveFileAs('${winId}', '${fileId}')" title="Save As"><i class="fas fa-copy"></i> SAVE AS</button>
-                            <button onclick="closeEditor('${winId}')" style="color:white; font-weight:bold; cursor:pointer;"><i class="fa-solid fa-close"></i> X</button>
+                            <button onclick="minimizeWin('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
+                            <button onclick="maximizeWin('${winId}')" title="Maximize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-maximize"></i></button>
+                            <button onclick="closeEditor('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
 
+                    <!-- 2. EDITOR MENU BAR (File, Edit, Selection) -->
+                    <div class="editor-menubar" style="background: #252526; display: flex; padding: 5px 10px; gap: 15px; border-bottom: 1px solid #333;">
+                        <div class="dropdown">
+                            <span style="color:#ccc; cursor:pointer; font-size:12px;">File</span>
+                            <div class="dropdown-content">
+                                <div onclick="saveFileContent('${winId}', '${fileId}')">Save (Ctrl+S)</div>
+                                <div onclick="saveFileAs('${winId}', '${fileId}')">Save As...</div>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <span style="color:#ccc; cursor:pointer; font-size:12px;">Edit</span>
+                            <div class="dropdown-content">
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.clipboardUndoAction')">Undo</div>
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.clipboardRedoAction')">Redo</div>
+                                <hr>
+                                <div onclick="triggerEditorCmd('${winId}', 'actions.find')">Find (Ctrl+F)</div>
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.startFindReplaceAction')">Replace (Ctrl+H)</div>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <span style="color:#ccc; cursor:pointer; font-size:12px;">Selection</span>
+                            <div class="dropdown-content">
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.selectAll')">Select All</div>
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.copyLinesDownAction')">Copy Line Down</div>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <span style="color:#ccc; cursor:pointer; font-size:12px;">View</span>
+                            <div class="dropdown-content">
+                                <div onclick="triggerEditorCmd('${winId}', 'editor.action.quickCommand')">Command Palette (F1)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. MONACO CONTAINER -->
                     <div class="win-body" style="flex: 1; position: relative; overflow: hidden;">
                         <div id="container-${winId}" style="width:100%; height:100%;"></div>
                     </div>
+
+                    <!-- 4. RESIZER HANDLE (Sizing Window) -->
+                    <div style="position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #444 50%);"></div>
                 </div>`;
             
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
-
-            // Cek Loader
-            if (typeof require === "undefined") {
-                const script = document.createElement('script');
-                script.src = `${MONACO_BASE}/loader.min.js`;
-                script.onload = () => {
-                    require.config({ paths: { 'vs': MONACO_BASE } });
-                    initMonacoInWin(winId, fileId, fileName);
-                };
-                document.head.appendChild(script);
-            } else {
-                initMonacoInWin(winId, fileId, fileName);
-            }
+            initMonacoInWin(winId, fileId, fileName);
         }
+
 
         function initMonacoInWin(winId, fileId, fileName) {
             require(['vs/editor/editor.main'], async function() {
