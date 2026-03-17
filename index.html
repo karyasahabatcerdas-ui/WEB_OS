@@ -87,6 +87,24 @@
             border-radius: 10px !important;
         }
 
+        .start-btn { cursor: pointer; padding: 0 20px; 
+            height: 100%; display: flex; 
+            align-items: center; gap: 8px; 
+            font-weight: bold; 
+            color: var(--accent); }
+
+        .start-btn:hover { 
+            background: var(--bg-panel) !important;
+            filter: brightness(120%) !important;  
+        }
+
+        .editor-menubar{
+            background: var(--bg-panel) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 10px !important;
+        }
+
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
         .taskbar { background: var(--bg-panel); color: var(--text-main); border-top: 1px solid var(--border); }
         .taskbar { height: 50px; backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000;}
@@ -164,9 +182,7 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif;}
         #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }      
 
-        .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
 
-        .start-btn:hover { background: rgba(0,0,0,0.1); }
        
         
 
@@ -174,14 +190,16 @@
         
 
 
-        .menu-item { padding: 12px; 
+        .menu-item .menu-user-header{ padding: 12px; 
             cursor: pointer; display: 
             flex; align-items: center;
              gap: 12px; border-radius: 8px; 
-             color: #333; }
+            color: var(--text-main) !important; 
+            background : var(--bg-panel) !important ;}
 
-        .menu-item:hover { 
-            background: #f0f0f0; 
+        .menu-item .menu-user-header:hover { 
+            background : var(--bg-panel) !important ;
+            filter: brightness(120%);  
             color: var(--accent); }
 
         #ctx-desktop { position: absolute; 
