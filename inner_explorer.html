@@ -41,6 +41,18 @@
         .ctx-menu div:hover { background: var(--accent); color: white; }
         
         #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; color: var(--accent); font-weight: bold; }
+
+        #resizer:hover {
+            background: var(--accent) !important; /* Berubah warna saat di-hover */
+            width: 6px !important;
+        }
+
+        /* Supaya text tidak terseleksi pas lagi nge-drag */
+        .resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+
     </style>
 </head>
 <body>
@@ -49,6 +61,8 @@
         <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px;">DRIVES & FOLDERS</div>
         <div id="root-anchor" class="tree-node" style="margin-left:0;"></div>
     </div>
+    <!-- TAMBAHKAN BARIS INI: Bar Pemisah -->
+    <div id="resizer" style="width: 4px; cursor: col-resize; background: #ddd; height: 100vh; transition: 0.2s;"></div>
 
     <div id="main-container">
         <div class="toolbar">
@@ -251,6 +265,29 @@
         }
 
         init();
+        const resizer = document.getElementById("resizer");
+        const sidePane = document.getElementById("side-pane");
+
+        resizer.onmousedown = (e) => {
+            document.body.classList.add("resizing");
+            
+            const doDrag = (e) => {
+                // Batasi lebar minimum 100px dan maksimum 500px biar gak hilang
+                if (e.clientX > 100 && e.clientX < 500) {
+                    sidePane.style.width = e.clientX + "px";
+                }
+            };
+
+            const stopDrag = () => {
+                document.body.classList.remove("resizing");
+                document.removeEventListener("mousemove", doDrag);
+                document.removeEventListener("mouseup", stopDrag);
+            };
+
+            document.addEventListener("mousemove", doDrag);
+            document.addEventListener("mouseup", stopDrag);
+        };
+
     </script>
 </body>
 </html>
