@@ -967,6 +967,12 @@
             const currentBg = sessionStorage.getItem("userWallpaper") || localStorage.getItem("desktopBg") || "";
             const currentBgColor = localStorage.getItem("desktopBgColor") || "#2c3e50";
 
+            // 1. HITUNG RASIO LAYAR (Dynamic Aspect Ratio)
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            const boxWidth = 180; // Lebar kotak preview tetap
+            const boxHeight = Math.round((screenH / screenW) * boxWidth); // Tinggi menyesuaikan rasio layar
+
             const winHtml = `
             <div id="${winId}" class="sub-window" style="width:650px; height:550px; top:50px; left:50px; background: #f4f7f9; display:flex; flex-direction:column;">
                     <div class="win-header" onmousedown="dragWin(this.parentElement)" style="background:#fff; border-bottom:1px solid #ddd; color:#333;">
@@ -1031,20 +1037,17 @@
 
                                            <!-- Di dalam winHtml, cari div preview-bg-box -->
                                             <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
-                                                style="width:200px; height:112px; border-radius:8px; 
-                                                    background-color: ${currentBgColor}; 
-                                                    background-image: ${currentBg && currentBg !== 'undefined' ? `url('${currentBg}')` : 'none'};
-                                                    /* --- INI KUNCINYA --- */
-                                                    background-position: center;
-                                                    background-repeat: no-repeat;
-                                                    background-size: cover; 
-                                                    border:2px solid #555; cursor:pointer; position:relative; overflow:hidden;
-                                                    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                                style="width:${boxWidth}px; height:${boxHeight}px; border-radius:8px; 
+                                                        background-color: ${currentBgColor}; 
+                                                        background-image: ${currentBg && currentBg !== 'undefined' ? `url('${currentBg}')` : 'none'};
+                                                        background-position: center;
+                                                        background-repeat: no-repeat;
+                                                        background-size: cover; 
+                                                        border:2px solid #555; cursor:pointer; position:relative; overflow:hidden;
+                                                        box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                                                 
-                                                <!-- Simulasi Taskbar Kecil di dalam Preview (Biar makin mirip Desktop) -->
-                                                <div style="position:absolute; bottom:0; width:100%; height:8px; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);"></div>
-                                                
-                                                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; opacity:0; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Ubah Gambar</div>
+                                                <!-- Simulasi Taskbar Tipis sesuai rasio -->
+                                                <div style="position:absolute; bottom:0; width:100%; height:10%; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);"></div>
                                             </div>
 
 
@@ -1511,24 +1514,23 @@
             const mode = document.getElementById('set-bg-mode').value;
             const color = document.getElementById('set-bg-color').value;
             
-            // 1. Warna latar miniatur
             previewBox.style.backgroundColor = color;
             
-            // 2. Logika Miniatur (Representasi Desktop)
             if (mode === "stretch") {
                 previewBox.style.backgroundSize = "100% 100%";
                 previewBox.style.backgroundRepeat = "no-repeat";
-                previewBox.style.backgroundPosition = "center";
             } else if (mode === "center") {
-                previewBox.style.backgroundSize = "40%"; // Di miniatur, gambar dikecilin biar keliatan 'tengah'
+                // Gambar dikecilkan 30% biar kelihatan 'mengambang' di tengah miniatur
+                previewBox.style.backgroundSize = "30%"; 
                 previewBox.style.backgroundRepeat = "no-repeat";
                 previewBox.style.backgroundPosition = "center";
             } else { // Tile
-                previewBox.style.backgroundSize = "30px 30px"; // Ukuran kotak ubin di miniatur
+                // Kotak ubin kecil biar efek pengulangannya kerasa di miniatur
+                previewBox.style.backgroundSize = "20px 20px"; 
                 previewBox.style.backgroundRepeat = "repeat";
-                previewBox.style.backgroundPosition = "top left";
             }
         }
+
 
 
 
