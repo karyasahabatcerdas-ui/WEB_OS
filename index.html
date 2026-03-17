@@ -102,6 +102,25 @@ let isMonacoReady = false;
 let isMonacoLoading = false;
 let monacoQueue = [];      // Antrean jika Monaco belum siap
 
+/*
+// 4. DESKTOP MANAGER (Mulai merender icon desktop)
+const OS = {
+    user: {
+        uuid: localStorage.getItem("webos_uuid"),
+        name: sessionStorage.getItem("userName") || "User"
+    },
+    // Fungsi Notifikasi Global
+    notify: (title, msg, type = 'info') => {
+        Swal.fire({ title, text: msg, icon: type, timer: 2000, showConfirmButton: false });
+    },
+    // Menjalankan App
+    openApp: (id, name, url) => {
+        // Logika Window Manager akan ada di Bagian 3
+        console.log(`Membuka: ${name}`);
+        createWindow(id, name, url);
+    }
+};
+*
 /* ============================================================
    UNIVERSAL SMART FETCH (CHUNK & PROGRESS ENGINE)
    ============================================================ */
@@ -168,6 +187,98 @@ async function smartFetch(payload, targetData = null) {
 
 // Lanjut ke Bagian 3...
 
+ // KRUSIAL: Jalankan ini langsung saat script terbaca agar background muncul instan
+        // Jalankan ini agar background muncul instan TANPA nge-lock CSS
+        (function applyImmediateStyles() {
+            const bg = localStorage.getItem("desktopBg");
+            const color = localStorage.getItem("desktopBgColor") || "#2c3e50";
+            const mode = localStorage.getItem("desktopBgMode") || "stretch";
+
+            // Kita tunggu sebentar sampai elemen #desktop-nya 'lahir' di DOM
+            const checkDesktop = setInterval(() => {
+                const desktop = document.getElementById('desktop');
+                if (desktop) {
+                    clearInterval(checkDesktop);
+                    
+                    // Pasang secara INLINE (Ini kuat, tapi bisa ditimpa JS nanti)
+                    desktop.style.backgroundColor = color;
+                    if (bg && bg !== "undefined") {
+                        desktop.style.backgroundImage = `url('${bg}')`;
+                    }
+                    
+                    // Set Mode
+                    if (mode === "stretch") {
+                        desktop.style.backgroundSize = "100% 100%";
+                        desktop.style.backgroundRepeat = "no-repeat";
+                    } else if (mode === "center") {
+                        desktop.style.backgroundSize = "auto";
+                        desktop.style.backgroundRepeat = "no-repeat";
+                        desktop.style.backgroundPosition = "center";
+                    } else {
+                        desktop.style.backgroundSize = "auto";
+                        desktop.style.backgroundRepeat = "repeat";
+                    }
+                    console.log("Instant background applied via inline style.");
+                }
+            }, 10); // Cek setiap 10ms (cepet banget)
+        })();
+
+
+        // menuliskan IP addres ke component DCOM agar siap dulu
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI sudah siap, sekarang panggil fungsi IP
+            getVisitorIP(function(ip) {
+                const ipField = document.getElementById('ip-addr');
+                if (ipField) {
+                    ipField.textContent = ip ? `IP: ${ip}` : "IP: xxx.xxx.xxx.xxx";
+                }
+            });
+        });
+
+
+        // Setup Environment (Anti vs/vs)
+        window.MonacoEnvironment = {
+            getWorkerUrl: function (workerId, label) {
+                // Mengarahkan worker ke file workerMain.js di repo kamu via JSDelivr
+                const workerPath = `${MONACO_BASE}/base/worker/workerMain.js`;
+                const code = `
+                    self.MonacoEnvironment = { baseUrl: '${MONACO_BASE}/' };
+                    importScripts('${workerPath}');
+                `;
+                return `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`;
+            }
+        };
+
+
+        function loadMonacoCore(callback) {
+            if (isMonacoReady) { if (callback) callback(); return; }
+            if (callback) monacoQueue.push(callback);
+            if (isMonacoLoading) return;
+
+            isMonacoLoading = true;
+            OS.showLoading('Memasok Engine Monaco 0.55.1 dari GitHub...');
+
+            const script = document.createElement('script');
+            script.src = `${MONACO_BASE}/loader.js`; // Loader dari repo kamu
+            
+            script.onload = () => {
+                // Konfigurasi path ke folder 'min/vs' di repo kamu
+                require.config({ paths: { 'vs': MONACO_BASE } });
+
+                require(['vs/editor/editor.main'], function() {
+                    isMonacoReady = true;
+                    isMonacoLoading = false;
+                    Swal.close();
+                    console.log("Monaco 0.55.1 (GitHub/min) Ready!");
+                    while (monacoQueue.length > 0) {
+                        const nextTask = monacoQueue.shift();
+                        nextTask();
+                    }
+                });
+            };
+            document.head.appendChild(script);
+        }
+
 // 3. UTILS: SHA-256 Hashing untuk Password
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
@@ -176,23 +287,142 @@ async function sha256(message) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 4. DESKTOP MANAGER (Mulai merender icon desktop)
-const OS = {
-    user: {
-        uuid: localStorage.getItem("webos_uuid"),
-        name: sessionStorage.getItem("userName") || "User"
-    },
-    // Fungsi Notifikasi Global
-    notify: (title, msg, type = 'info') => {
-        Swal.fire({ title, text: msg, icon: type, timer: 2000, showConfirmButton: false });
-    },
-    // Menjalankan App
-    openApp: (id, name, url) => {
-        // Logika Window Manager akan ada di Bagian 3
-        console.log(`Membuka: ${name}`);
-        createWindow(id, name, url);
-    }
-};
+
+
+
+ // Function to retrieve the visitor's IP address
+        function getVisitorIP(callback) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'https://api.ipify.org?format=json', true);
+                xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    callback(response.ip);
+                }
+                };
+                xhr.send();
+            }
+
+
+ async function attemptLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const passHash = await sha256(pass);
+            
+            let uuid = localStorage.getItem("webos_uuid") || self.crypto.randomUUID();
+            localStorage.setItem("webos_uuid", uuid);
+
+            //Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
+            //OS.showLoading('Authenticating...');
+
+            console.log("habis swal loading");
+            const ipField = document.getElementById('ip-addr');
+            const clientIP = (ipField) ? ipField.textContent : "IP: tidak sempat diambil" ;
+            console.log("habis dapat ip", clientIP);
+
+                // 2. Deteksi Browser & Device Type (navigator.userAgent)
+            const ua = navigator.userAgent; // info client pakai apa lengkap
+            console.log("baca ua: ",ua)
+            let deviceType = "Desktop";
+            if (/Mobi|Android|iPhone/i.test(ua)) {  //deteksi android bukan?
+                    deviceType= "Mobile";
+                    } else {
+                    deviceType= "Desktop";
+                    }
+
+                const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
+                console.log("habis dapat browser :", deviceInfo);
+          
+
+                const payload = {
+                        action: "LOGIN",
+                        username: user,
+                        password: passHash,
+                        uuid: uuid,
+                        device: deviceInfo,
+                        wallpaper: (typeof wallpaper !== 'undefined') ? wallpaper : "" // Proteksi jika wallpaper null
+                    };
+                    console.log("Data yang dikirim:", payload);
+                    const dataSize = getPayloadSize(payload);
+
+                    Swal.fire({
+                        title: 'Authenticating...',
+                        html: `
+                            <div style="font-size:12px; color:#666; margin-bottom:10px;">
+                                <i class="fas fa-cloud-upload-alt"></i> Mengirim Paket Auth...<br>
+                                <small>Packet Size: <b>${dataSize}</b></small>
+                            </div>
+                        `,
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+            try {
+                // 3. Kirim ke GAS
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                    
+                });
+               // console.log("Response diterima dari server");
+                const result = await response.json();
+                //console.log("Hasil JSON:", result);
+
+               if (result.status === "success") {
+                    console.log("Login sukses, menyinkronkan pengaturan...");
+                    // --- GANTI TEKS SWAL (Jangan ditutup dulu) ---
+                    const swalTitle = document.getElementById('swal2-title');
+                    const swalHtml = document.querySelector('.swal2-html-container');
+                    if(swalTitle) swalTitle.innerText = "Syncing Settings...";
+                    if(swalHtml) swalHtml.innerHTML = "<small>Applying your personalized desktop...</small>"
+                    
+                    document.getElementById('login-screen').style.display = 'none';
+
+                    // 1. Simpan Status Autentikasi Dasar
+                    sessionStorage.setItem("isAuth", "true");
+                    sessionStorage.setItem("userName", result.user);
+                    sessionStorage.setItem("userPhoto", result.photo || "");
+                    
+                    // 2. Simpan Wallpaper (Gunakan result.wallpaper dari database)
+                    const bgUrl = result.wallpaper || "";
+                    sessionStorage.setItem("userWallpaper", bgUrl);
+                    localStorage.setItem("desktopBg", bgUrl); // Simpan permanen agar tidak putih saat reload
+
+                    // 3. Sinkronkan Pengaturan Visual (Data dari Kolom H)
+                    const s = result.settings || {}; 
+                    localStorage.setItem("desktopBgColor", s.bgColor || "#2c3e50");
+                    localStorage.setItem("desktopBgMode", s.bgMode || "stretch");
+                    localStorage.setItem("sysWinTheme", s.theme || "dark");
+                    localStorage.setItem("sysRegion", s.region || "id-ID");
+                    localStorage.setItem("sysDateFormat", s.dateFormat || "dd/MM/yyyy");
+                    localStorage.setItem("sysHourFormat", s.hourFormat || "24h");
+                    // --- SINKRONKAN SETTINGAN MONACO ---
+                    localStorage.setItem("sysMonacoTheme", s.monacoTheme || "vs-dark");
+                    localStorage.setItem("sysMonacoFont", s.monacoFont || "'Consolas', monospace");
+                    localStorage.setItem("sysMonacoSize", s.monacoSize || 14);
+
+                    // 4. Nyalakan OS dengan data yang sudah lengkap
+                    initOS();
+                    setTimeout(() => {
+                                Swal.close();
+                            }, 300);
+                } else {
+                    Swal.close();
+                    //Swal.fire("Access Denied", result.msg, "error");
+                     OS.notify("Access Denied", result.msg, "error");
+                    
+                }
+            } catch (e) {
+                Swal.close();
+                //Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
+                OS.notify("Error", "Gagal mendeteksi koneksi atau server down", "error");
+            }
+            Swal.close();
+        }
+
+
+
+        
 /* ============================================================
    WINDOW MANAGEMENT & SETTINGS HANDLER
    ============================================================ */
@@ -318,7 +548,7 @@ function renderDesktop() {
         desktop.appendChild(icon);
     });
 }
-
+/*
 // 2. SISTEM JAM (Clock)
 function updateClock() {
     const clock = document.getElementById('clock');
@@ -329,7 +559,8 @@ function updateClock() {
     if (clock) clock.innerText = timeStr;
 }
 setInterval(updateClock, 1000);
-
+*/
+/*
 // 3. INISIALISASI SISTEM (Load Session & Settings)
 async function initOS() {
     updateClock();
@@ -357,6 +588,1188 @@ async function initOS() {
 
     console.log("WEB_OS System Ready.");
 }
+*/
+
+function initOS() {
+            updateClock(); 
+            setInterval(updateClock, 1000);
+            restoreCloudSession();
+
+            const name = sessionStorage.getItem("userName") || "Guest";
+            let photo = sessionStorage.getItem("userPhoto");
+            const bgUrl = sessionStorage.getItem("userWallpaper"); // Ambil URL Wallpaper
+            const savedTheme = localStorage.getItem("sysWinTheme") || "dark";
+            applyTheme(savedTheme);
+
+            // Fallback kalau photo kosong
+            if (!photo || photo === "undefined") {
+                photo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
+            }
+
+            // 1. Terapkan Wallpaper ke Desktop
+            const desktop = document.getElementById('desktop');
+            if (bgUrl && bgUrl !== "" && bgUrl !== "undefined") {
+                desktop.style.backgroundImage = "url('" + bgUrl + "')";
+                
+                // Ambil settingan mode (stretch/center/tile) dari localStorage
+                const bgMode = localStorage.getItem("desktopBgMode") || "stretch";
+                
+                // Terapkan style sesuai mode
+                if (bgMode === "stretch") {
+                    desktop.style.backgroundSize = "100% 100%";
+                    desktop.style.backgroundRepeat = "no-repeat";
+                } else if (bgMode === "center") {
+                    desktop.style.backgroundSize = "auto";
+                    desktop.style.backgroundRepeat = "no-repeat";
+                    desktop.style.backgroundPosition = "center";
+                } else { // tile
+                    desktop.style.backgroundSize = "auto";
+                    desktop.style.backgroundRepeat = "repeat";
+                }
+            }
+
+            // UPDATE LANGSUNG KE ELEMEN YANG SUDAH ADA
+            const imgEl = document.getElementById('user-photo-img');
+            const nameEl = document.getElementById('user-name-span');
+
+            if (imgEl) imgEl.src = photo;
+            if (nameEl) nameEl.innerText = name;                
+                document.getElementById('desktop').style.backgroundImage = `url('${bgUrl}')`;
+            }
+
+function createNewExplorer(folderId = ROOT_ID, title = "Explorer") {
+            windowCount++;
+            const winId = `win-${windowCount}`;
+            const appId = `app-${winId}`;
+            const winHtml = `
+                <!-- <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')"> -->
+                <div id="${winId}" class="sub-window" style="top:80px; left:80px; width:600px; height:400px; resize: both; overflow: hidden; display: flex; flex-direction: column;" onmousedown="focusWin('${winId}')">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)">
+                        <span>📁 ${title}</span>
+                        <div class="win-controls">
+                            <button onclick="toggleMinimize('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
+                            <button onclick="maximizeWin('${winId}')" title="Maximize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-maximize"></i></button>
+                            <button onclick="closeWin('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    <div class="win-body">
+                        <iframe src="inner_explorer.html?folderId=${folderId}&pName=${encodeURIComponent(title)}" style="width:100%; height:100%; border:none;"></iframe>
+                    </div>
+                </div>`;
+            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+            addToTaskbar(winId, appId, title);
+            
+        }
+        
+        async function saveFileContent(winId, fileId) {
+            if (!editors[winId]) return;
+            const content = editors[winId].getValue(); // Ambil teks dari Monaco
+            
+            // LOGIKA EKSPLISIT: Jika file baru (tidak ada ID), paksa Save As
+            if (!fileId || fileId === "" || fileId === "undefined") {
+                saveFileAs(winId, fileId);
+                return;
+            }
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "SAVE_FILE_CONTENT",
+                        id: fileId,
+                        content: content // Konten kodingan dibungkus di sini
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.status === "success") {
+                    // UPDATE dataset agar sinkron dengan yang baru di-save
+                    document.getElementById(winId).dataset.originalContent = content;
+                    alert("Success! File saved to Cloud. ☁️");
+                } else {
+                    alert("Error: " + result.msg);
+                }
+            } catch (e) {
+                console.error("Save Error:", e);
+                alert("CORS or Network Error! Check Console.");
+            }
+        }
+
+
+        function handleFileOpen(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['js', 'html', 'css', 'txt', 'json'].includes(ext)) openEditor(file.id, file.name);
+            else window.open(`https://drive.google.com{file.id}`);
+        }
+
+        function addToTaskbar(winId, appId, title) {
+            const icon = `<div id="${appId}" onclick="focusWin('${winId}')" style="padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; font-size: 12px;"><i class="fas fa-folder"></i> ${title}</div>`;
+            document.getElementById('taskbar-apps').insertAdjacentHTML('beforeend', icon);
+        }
+
+        function dragWin(el) {
+            el.onmousedown = (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                focusWin(el.id);
+                 // MATIKAN INTERAKSI IFRAME SAAT DRAG/RESIZE
+                document.querySelectorAll('iframe').forEach(i => i.style.pointerEvents = 'none');
+                let p3 = e.clientX, p4 = e.clientY;
+                document.onmousemove = (e) => {
+                    el.style.top = (el.offsetTop - (p4 - e.clientY)) + "px";
+                    el.style.left = (el.offsetLeft - (p3 - e.clientX)) + "px";
+                    p3 = e.clientX; p4 = e.clientY;
+                };
+                document.onmouseup = () => {
+                    document.onmousemove = null;
+                    document.querySelectorAll('iframe').forEach(i => i.style.pointerEvents = 'auto');
+                };
+            };
+        }
+
+        function focusWin(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+
+            // 1. Jika jendela sedang disembunyikan (minimized), tampilkan dulu
+            if (win.style.display === 'none') {
+                win.style.display = 'flex';
+            }
+
+            // 2. Naikkan z-index paling depan
+            document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
+            win.style.zIndex = "1000"; // Pastikan lebih tinggi dari menu
+
+            // 3. Khusus Monaco: Update layout kalau ukurannya berubah
+            if (editors[id]) {
+                setTimeout(() => editors[id].layout(), 10);
+            }
+        }
+
+        /*
+        function focusWin(id) {
+            document.querySelectorAll('.sub-window').forEach(w => w.style.zIndex = "10");
+            document.getElementById(id).style.zIndex = "100";
+        }
+        */
+        /*
+        function closeWin(id, appId) {
+            document.getElementById(id).remove();
+            document.getElementById(appId).remove();
+        } */
+
+        function closeWin(winId) {
+            const win = document.getElementById(winId);
+            if (!win) return;
+
+            // 1. LOGIKA SAFETY (Hanya jika ini jendela Editor/Monaco)
+            if (editors[winId]) {
+                const currentContent = editors[winId].getValue();
+                const originalContent = win.dataset.originalContent || "";
+
+                if (currentContent !== originalContent) {
+                    if (!confirm("Ada perubahan yang belum disimpan di editor ini. Yakin mau tutup?")) {
+                        return; // Batal tutup
+                    }
+                }
+                // Bersihkan memory Monaco
+                editors[winId].dispose();
+                delete editors[winId];
+            }
+
+            // 2. HAPUS ELEMEN JENDELA
+            win.remove();
+
+            // 3. HAPUS ICON DI TASKBAR
+            // Explorer pakai format 'app-win-1', Editor pakai 'app-edit-12345'
+            // Kita cari element yang ID-nya mengandung winId
+            const appId = `app-${winId}`; 
+            const taskIcon = document.getElementById(appId);
+            if (taskIcon) taskIcon.remove();
+        }
+
+        // Supaya tombol lama di HTML Editor (yang manggil closeEditor) nggak error:
+        function closeEditor(winId) {
+            closeWin(winId);
+        }
+
+
+        /*
+        function toggleMinimize(winId) {
+            const win = document.getElementById(winId);
+            win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+            const appId = `app-${winId}`;
+            document.getElementById(appId).classList.toggle('active');
+         } */
+
+         function toggleMinimize(winId) {
+            const win = document.getElementById(winId);
+            if (!win) return;
+            
+            if (win.style.display === 'none') {
+                win.style.display = 'flex';
+                focusWin(winId); // Otomatis bawa ke depan saat dibuka lagi
+            } else {
+                win.style.display = 'none';
+            }
+        }
+
+        // Editor manggil ini, arahkan ke fungsi yang sama agar konsisten
+        function minimizeWin(winId) {
+            toggleMinimize(winId);
+        }
+
+
+
+
+        function toggleStartMenu() {
+            const m = document.getElementById('start-menu');
+            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showDesktopCtx(e) {
+            e.preventDefault();
+            const m = document.getElementById('ctx-desktop');
+            m.style.display = 'block'; m.style.left = e.pageX + 'px'; m.style.top = e.pageY + 'px';
+        }
+
+        async function saveCloudSession() {
+            const windows = [];
+            document.querySelectorAll('.sub-window').forEach(win => {
+                const iframe = win.querySelector('iframe');
+                if (iframe) {
+                    const url = new URL(iframe.src);
+                    windows.push({ top: win.style.top, left: win.style.left, title: url.searchParams.get('pName'), folderId: url.searchParams.get('folderId') });
+                }
+            });
+            await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "SAVE_SESSION", data: windows }) });
+            alert("Hibernated!");
+        }
+
+        async function restoreCloudSession() {
+            const res = await fetch(`${GAS_URL}?action=GET_SESSION`);
+            const windows = await res.json();
+            if (Array.isArray(windows)) windows.forEach(w => createNewExplorer(w.folderId, w.title));
+        }
+
+        function updateClock() {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+
+        window.onclick = () => {
+            document.getElementById('start-menu').style.display = 'none';
+            document.getElementById('ctx-desktop').style.display = 'none';
+        }
+
+        window.addEventListener('keydown', async (e) => {
+            // Alt + I untuk "Instant Code File"
+            if (e.altKey && e.key === 'i') {
+                const fileName = prompt("Nama file baru (contoh: script.js):");
+                if (!fileName) return;
+
+                // 1. Buat file kosong dulu di Drive
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "UPSERT_FILE",
+                        name: fileName,
+                        mimeType: "text/plain",
+                        base64: "", 
+                        folderId: ROOT_ID 
+                    })
+                });
+                
+                // 2. Jika sukses, langsung cari file tersebut dan buka Editor
+                // (Tips: Sebaiknya GAS mengembalikan ID file baru agar langsung bisa dibuka)
+                alert("File created! Silakan buka lewat Explorer untuk mengedit.");
+                // Atau panggil openEditor jika kamu punya ID-nya
+            }
+        });
+
+        function triggerEditorCmd(winId, actionId) {
+            const editor = editors[winId];
+            if (editor) {
+                editor.focus();
+                editor.trigger('menu', actionId);
+            }
+        }
+
+        // OS Level Maximize
+        function maximizeWin(id) {
+            const win = document.getElementById(id);
+            if (win.style.width === "100vw") {
+                win.style.width = "850px"; win.style.height = "600px"; win.style.top = "60px"; win.style.left = "120px";
+            } else {
+                win.style.width = "100vw"; win.style.height = "calc(100vh - 50px)"; win.style.top = "0"; win.style.left = "0";
+            }
+            // Resize Monaco immediately
+            if (editors[id]) editors[id].layout();
+        }
+
+
+
+        // 1. KONFIGURASI GLOBAL (Ganti versi di sini saja)
+
+        function openEditor(fileId, fileName) {
+            // Fungsi internal untuk membuat jendela (Task)
+            const createTask = () => {
+                // Cek apakah monaco sudah mendarat di memory RAM
+                if (typeof monaco === "undefined") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Memory Belum Siap',
+                        text: 'Mesin baru saja mendarat. Silakan klik ulang sekali lagi.',
+                        timer: 2000
+                    });
+                    return;
+                }
+
+                const winId = `edit-${Date.now()}`;
+                const appId = `app-${winId}`;
+
+                // KODE LENGKAP WINDOW (Header + Menu Bar + Body)
+                const winHtml = `
+                    <div id="${winId}" class="sub-window" 
+                        style="width:850px; height:600px; top:60px; left:120px; z-index:1000; display: flex; flex-direction: column; background: #1e1e1e; border: 1px solid #444; resize: both; overflow: hidden;" 
+                        onmousedown="focusWin('${winId}')">
+                        
+                        <!-- 1. HEADER (TETAP) -->
+                        <div class="win-header" style="height: 35px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" onmousedown="dragWin(this.parentElement)">
+                            <span>📝 ${fileName}</span>
+                            <div class="win-controls">
+                                <button onclick="toggleMinimize('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
+                                <button onclick="maximizeWin('${winId}')" title="Maximize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-maximize"></i></button>
+                                <button onclick="closeWin('${winId}')" title="Close" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- 2. MENU BAR LENGKAP (TETAP) -->
+                        <div class="editor-menubar" style="background: #252526; display: flex; padding: 5px 10px; gap: 15px; border-bottom: 1px solid #333;">
+                            <div class="dropdown">
+                                <span style="color:#ccc; cursor:pointer; font-size:12px;">File</span>
+                                <div class="dropdown-content">
+                                    <div onclick="saveFileContent('${winId}', '${fileId}')">Save (Ctrl+S)</div>
+                                    <div onclick="saveFileAs('${winId}', '${fileId}')">Save As...</div>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <span style="color:#ccc; cursor:pointer; font-size:12px;">Edit</span>
+                                <div class="dropdown-content">
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.clipboardUndoAction')">Undo</div>
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.clipboardRedoAction')">Redo</div>
+                                    <hr style="border:0; border-top:1px solid #444; margin:5px 0;">
+                                    <div onclick="triggerEditorCmd('${winId}', 'actions.find')">Find (Ctrl+F)</div>
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.startFindReplaceAction')">Replace (Ctrl+H)</div>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <span style="color:#ccc; cursor:pointer; font-size:12px;">Selection</span>
+                                <div class="dropdown-content">
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.selectAll')">Select All</div>
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.copyLinesDownAction')">Copy Line Down</div>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <span style="color:#ccc; cursor:pointer; font-size:12px;">View</span>
+                                <div class="dropdown-content">
+                                    <div onclick="triggerEditorCmd('${winId}', 'editor.action.quickCommand')">Command Palette (F1)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. MONACO CONTAINER (TETAP) -->
+                        <div class="win-body" style="flex: 1; position: relative; overflow: hidden;">
+                            <div id="container-${winId}" style="width:100%; height:100%;"></div>
+                        </div>
+
+                        <!-- 4. RESIZER HANDLE (TETAP) -->
+                        <div style="position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, #444 50%);"></div>
+                    </div>`;
+
+                // Masukkan ke Desktop
+                document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+                
+                // Daftarkan ke Taskbar
+                addToTaskbar(winId, appId, fileName);
+                
+                // Inisialisasi isi Monaco
+                initMonacoInWin(winId, fileId, fileName);
+            };
+
+            // Panggil mesin landing sebelum eksekusi createTask
+            loadMonacoCore(createTask);
+        }
+
+
+        function initMonacoInWin(winId, fileId, fileName) {
+            require(['vs/editor/editor.main'], async function() {
+                try {
+                    let finalContent = ""; 
+                    // Di dalam initMonacoInWin() index.html
+                    const savedTheme = localStorage.getItem("sysMonacoTheme") || "vs-dark";
+                    const savedFont = localStorage.getItem("sysMonacoFont") || "'Consolas', monospace";
+                    const savedSize = parseInt(localStorage.getItem("sysMonacoSize")) || 14;
+
+                    // LOGIKA EKSPLISIT: Ambil konten jika ada ID
+                    if (fileId && fileId !== "") {
+                        const res = await fetch(`${GAS_URL}?action=READ_FILE&id=${fileId}`);
+                        const data = await res.json();
+                        
+                        // Pastikan akses data.content
+                        if (data && data.content !== undefined) {
+                            finalContent = data.content;
+                        }
+                    }
+
+                    const ext = fileName.split('.').pop().toLowerCase();
+                    const langMap = { 'js': 'javascript', 'html': 'html', 'css': 'css', 'json': 'json', 'py': 'python', 'txt': 'plaintext' };
+
+                    // BAGIAN INI TETAP (Settingan Monaco lo yang lengkap)
+                    editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
+                        value: finalContent,
+                        language: langMap[ext] || 'plaintext',
+                        theme: savedTheme, // Pakai hasil simpanan
+                        automaticLayout: true,
+                        fontFamily: savedFont, // Pakai hasil simpanan
+                        fontSize: savedSize, // Pasang ukuran simpanan
+                        fixedOverflowWidgets: true, 
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false
+                    });
+
+                    // BAGIAN INI TETAP
+                    addEditorShortcuts(winId, fileId);
+                    document.getElementById(winId).dataset.originalContent = finalContent;
+
+                } catch (err) {
+                    // CATCH HANYA UNTUK HANDLE ERROR (Network/Server Error)
+                    console.error("Critical Error pada initMonaco:", err);
+                    alert("Terjadi kesalahan sistem saat memuat editor.");
+                }
+            });
+        }
+
+
+        // 1. Fungsi Save As (Buat file baru dari isi editor)
+        async function saveFileAs(winId, fileId) {
+            if (!editors[winId]) return;
+            const content = editors[winId].getValue();
+            
+            // AMBIL NAMA DARI HEADER SECARA AMAN
+            const headerSpan = document.querySelector(`#${winId} .win-header span`);
+            // Ganti 'oldName' dengan logika ini:
+            const currentName = headerSpan ? headerSpan.innerText.replace('📝 ', '') : "Untitled.js";
+            
+            const newName = prompt("Simpan sebagai (Nama File Baru):", currentName);
+            if (!newName) return;
+
+            try {
+                // Cek apakah ini file baru atau copy dari file lama
+                const isNewFile = (!fileId || fileId === "" || fileId === "undefined");
+                const actionType = isNewFile ? "UPSERT_FILE" : "COPY_FILE";
+                
+                const payload = {
+                    action: actionType,
+                    id: fileId,
+                    name: newName,      // Untuk UPSERT
+                    newName: newName,   // Untuk COPY
+                    content: content,
+                    base64: btoa(unescape(encodeURIComponent(content))), // Base64 yang aman untuk karakter unik
+                    mimeType: "text/plain",
+                    folderId: ROOT_ID
+                };
+
+                const res = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if(data.status === "success") {
+                    //Swal.fire("Berhasil!", "File disimpan ke Drive.", "success");
+                    OS.notify("Berhasil!", "File disimpan ke Drive.", "success");
+                    closeWin(winId); // Tutup jendela "Untitled"
+                    openEditor(data.id, data.name || newName); // Buka file yang baru dibuat (sudah ada ID-nya)
+                }
+            } catch (e) { 
+                console.error(e);
+                //Swal.fire("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
+                OS.notify("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
+            }
+        }
+
+
+        // 2. Fungsi Keyboard Shortcut Ctrl+S (Internal Monaco)
+        function addEditorShortcuts(winId, fileId) {
+            const editor = editors[winId];
+            
+            // Gunakan API Monaco untuk menangkap Ctrl+S (Command + S di Mac)
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
+                saveFileContent(winId, fileId);
+            });
+        }
+
+        function changeEditorTheme(theme) {
+            Object.values(editors).forEach(editor => {
+                monaco.editor.setTheme(theme);
+            });
+        }
+
+        function changeDesktopBg(path) { // Ganti parameter jadi 'path'
+            if (!path) return;
+            document.getElementById('desktop').style.backgroundImage = `url('${path}')`;
+            // Tambahan supaya gambar nggak pecah/ngulang
+            document.getElementById('desktop').style.backgroundSize = "cover";
+            document.getElementById('desktop').style.backgroundPosition = "center";
+        }        
+
+ 
+
+        function openQuickSettings() {
+            const winId = 'win-settings';
+            if(document.getElementById(winId)) { focusWin(winId); return; }
+
+            const currentName = sessionStorage.getItem("userName") || "User";
+            const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name=${currentName}&background=random&color=fff`;
+            //const currentBg = localStorage.getItem("desktopBg") || "";
+            const currentBg = sessionStorage.getItem("userWallpaper") || localStorage.getItem("desktopBg") || "";
+            const currentBgColor = localStorage.getItem("desktopBgColor") || "#2c3e50";
+
+            // 1. HITUNG RASIO LAYAR (Dynamic Aspect Ratio)
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            const boxWidth = 180; // Lebar kotak preview tetap
+            const boxHeight = Math.round((screenH / screenW) * boxWidth); // Tinggi menyesuaikan rasio layar
+
+            const winHtml = `
+            <div id="${winId}" class="sub-window" style="width:650px; height:550px; top:50px; left:50px; background: #f4f7f9; display:flex; flex-direction:column;">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)" style="background:#fff; border-bottom:1px solid #ddd; color:#333;">
+                        <span>⚙️ System Control Panel</span>
+                        <div class="win-controls">
+                            <button onclick="closeWin('${winId}')" style="color:#333;"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    
+                <div class="win-body" style="flex:1; display:flex; overflow:hidden;  flex-direction:column;">
+                    <!-- AREA TENGAH: KONTEN (SCROLLABLE) -->
+                    <div style="flex:1; display:flex; overflow:hidden;">
+                        <!-- Sidebar Navigasi -->
+                        <div style="width:180px; background:#fff; border-right:1px solid #ddd; padding:10px; display:flex; flex-direction:column; gap:5px;">
+                            <div class="nav-item active" onclick="switchSettingsTab('sec-account', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-user-circle"></i> Account</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-desktop', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-desktop"></i> Desktop</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-monaco', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-code"></i> Editor</div>
+                            <div class="nav-item" onclick="switchSettingsTab('sec-system', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-globe"></i> Region & Time</div>
+                        </div>
+
+                        <!-- Content Area -->
+                        <div id="settings-content-area" style="flex:1; padding:20px; overflow-y:auto; position:relative;">
+                            
+                            <!-- A. ACCOUNT & SECURITY -->
+                            <div id="sec-account" class="settings-tab-content">
+                                <h3 style="margin-top:0; font-size:16px;">Account & Security</h3>
+                                <div style="display:flex; align-items:center; gap:20px; background:white; padding:20px; border-radius:12px; border:1px solid #eee;">
+                                    <div style="text-align:center;">
+                                        <div style="position:relative; width:80px; height:80px; margin:0 auto; cursor:pointer;" onclick="document.getElementById('avatar-input').click()">
+                                            <img id="preview-avatar" src="${currentPhoto}" style="width:80px; height:80px; border-radius:15px; object-fit:cover; border:2px solid var(--accent);">
+                                            <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;"><i class="fas fa-camera" style="font-size:10px;"></i></div>
+                                        </div>
+                                        <input type="file" id="avatar-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-avatar', false)">
+                                        <p style="font-size:10px; color:#888; margin-top:8px;">Klik gambar untuk ganti</p>
+                                    </div>
+                                    <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+                                        
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <input type="text" id="set-username" value="${currentName}" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
+                                            <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
+                                                <input id="chk-user" type="checkbox" checked onchange="toggleSettingInput('set-username', this)"> Lock
+                                            </label>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <input type="password" id="set-password" placeholder="Password Baru" disabled style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f0f0f0;">
+                                            <label style="display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer;">
+                                                <input id="chk-pass" type="checkbox" checked onchange="toggleSettingInput('set-password', this)"> Lock
+                                            </label>
+                                        </div>
+                                       
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- B1. DESKTOP SETTING -->
+                            <div id="sec-desktop" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">Desktop Appearance</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    
+                                    <!-- Preview Wallpaper & Mode -->
+                                    <div style="display:flex; gap:20px; align-items:flex-start;">
+                                        <div style="text-align:center;">
+
+                                           <!-- Di dalam winHtml, cari div preview-bg-box -->
+                                            <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
+                                                style="width:${boxWidth}px; height:${boxHeight}px; border-radius:8px; 
+                                                        background-color: ${currentBgColor}; 
+                                                        background-image: ${currentBg && currentBg !== 'undefined' ? `url('${currentBg}')` : 'none'};
+                                                        background-position: center;
+                                                        background-repeat: no-repeat;
+                                                        background-size: cover; 
+                                                        border:2px solid #555; cursor:pointer; position:relative; overflow:hidden;
+                                                        box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                                
+                                                <!-- Simulasi Taskbar Tipis sesuai rasio -->
+                                                <div style="position:absolute; bottom:0; width:100%; height:10%; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);"></div>
+                                            </div>
+
+
+                                            <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-bg-box', true)">
+                                            <button onclick="clearDesktopImg()" style="margin-top:8px; border:none; background:none; color:#e74c3c; cursor:pointer; font-size:11px; font-weight:bold;"><i class="fas fa-eraser"></i> Hapus Gambar</button>
+                                        </div>
+
+                                        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+                                            <div>
+                                                <label style="font-size:11px; font-weight:bold; color:#666;">Display Mode:</label>
+                                                <select id="set-bg-mode" onchange="updateMiniPreview()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                                    <option value="stretch">Stretch (Penuhi Layar)</option>
+                                                    <option value="center">Center (Tengah Asli)</option>
+                                                    <option value="tile">Tile (Berulang)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px; font-weight:bold; color:#666;">Background Color:</label>
+                                                <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                                                    <input type="color" id="set-bg-color" value="${currentBgColor}" onchange="updateMiniPreview()" style="border:none; width:40px; height:35px; cursor:pointer; padding:0; background:none;">
+                                                    <span style="font-size:11px; color:#888;">Warna di bawah gambar</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr style="border:0; border-top:1px solid #eee;">
+
+                                    <!-- Windows Theme Selection -->
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Windows Theme:</label>
+                                        <select id="set-win-theme" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="dark">Dark Mode (Default)</option>
+                                            <option value="light">Light Mode</option>
+                                            <option value="bluedark">Deep Blue Ocean</option>
+                                            <option value="greendark">Forest Grey</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- B2. MONACO EDITOR SETTING -->
+                            <div id="sec-monaco" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">Monaco Editor Settings</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Editor Theme:</label>
+                                        <select id="set-monaco-theme" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="vs-dark">Dark (VS Code Style)</option>
+                                            <option value="vs">Light</option>
+                                            <option value="hc-black">High Contrast</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Font Family:</label>
+                                        <select id="set-monaco-font" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="'Consolas', 'Courier New', monospace">Consolas (Default)</option>
+                                            <option value="'Fira Code', monospace">Fira Code</option>
+                                            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                            <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                                        </select>
+                                    </div>
+                                    <!-- Tambahkan di bawah select Font Family pada Bagian 2 -->
+                                    <div style="margin-top: 10px;">
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Font Size (px):</label>
+                                        <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                                            <input type="number" id="set-monaco-size" value="${localStorage.getItem('sysMonacoSize') || 14}" min="10" max="30" style="width:60px; padding:6px; border-radius:6px; border:1px solid #ddd;">
+                                            <span style="font-size:11px; color:#888;">Range: 10 - 30px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                                                <!-- C. SYSTEM REGION & TIME -->
+                            <div id="sec-system" class="settings-tab-content" style="display:none;">
+                                <h3 style="margin-top:0; font-size:16px;">System Region & Time</h3>
+                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Region Setting:</label>
+                                        <select id="set-region" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="id-ID">Indonesia (id-ID)</option>
+                                            <option value="en-US">English (en-US)</option>
+                                            <option value="ja-JP">Japan (ja-JP)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Date Format:</label>
+                                        <select id="set-date-format" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="dd/MM/yyyy">DD/MM/YYYY (31/12/2024)</option>
+                                            <option value="MM/dd/yyyy">MM/DD/YYYY (12/31/2024)</option>
+                                            <option value="dddd, dd MMMM yyyy">Full Date (Selasa, 21 Maret 2024)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Time Format:</label>
+                                        <select id="set-hour-format" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                            <option value="24h">24-Hour (13:00:00)</option>
+                                            <option value="12h">12-Hour (01:00:00 PM)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div> <!-- End Content Area -->
+                    </div>
+                        <!-- Tombol Save di Bawah (Sticky) -->
+                        <div style="padding:15px; background:white; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+                            <button onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
+                            <button onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Apply Changes</button>
+                        </div>
+
+                    </div> <!-- End win-body -->
+                </div>`;
+
+            document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
+            // Set nilai dropdown sesuai yang tersimpan di localStorage
+            const savedMode = localStorage.getItem("desktopBgMode") || "stretch";
+            const modeSelect = document.getElementById('set-bg-mode');
+            if(modeSelect) modeSelect.value = savedMode;
+
+            // Paksa preview box update visualnya sesuai mode
+            // Setelah insertAdjacentHTML...
+            const settingsMap = {
+                'set-bg-mode': 'desktopBgMode',
+                'set-win-theme': 'sysWinTheme',
+                'set-monaco-theme': 'sysMonacoTheme',
+                'set-monaco-font': 'sysMonacoFont',
+                'set-region': 'sysRegion',
+                'set-date-format': 'sysDateFormat',
+                'set-hour-format': 'sysHourFormat'
+            };
+
+            // Kita kasih jeda dikit biar browser selesai ngerender elemennya
+            setTimeout(() => {
+                for (const [id, storageKey] of Object.entries(settingsMap)) {
+                    const el = document.getElementById(id);
+                    const savedValue = localStorage.getItem(storageKey);
+                    if (el && savedValue) {
+                        el.value = savedValue;
+                    }
+                }
+                // Jalankan preview biar visualnya langsung sinkron
+                applyDesktopPreview();
+            }, 50); 
+
+            //applyDesktopPreview();
+        }
+
+        /* --- LOGIKA PENDUKUNG (Tulis di Luar Fungsi openQuickSettings) --- */
+
+        // 1. Switch Tab Sidebar
+        function switchSettingsTab(tabId, el) {
+            document.querySelectorAll('.settings-tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('active');
+                n.style.background = 'none';
+                n.style.fontWeight = 'normal';
+            });
+            
+            document.getElementById(tabId).style.display = 'block';
+            el.style.background = '#f0f0f0';
+            el.style.fontWeight = 'bold';
+        }
+
+        // 2. Lock/Unlock Checkbox Logic
+        function toggleSettingInput(targetId, chk) {
+            const input = document.getElementById(targetId);
+            input.disabled = chk.checked; // Checked = Lock
+            input.style.background = chk.checked ? "#f0f0f0" : "#fff";
+        }
+
+        // 3. Preview Image Logic (Avatar & Desktop)
+        function previewImageToTarget(input, targetId, isDiv) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    const previewBox = document.getElementById(targetId);
+                    
+                    // --- LOGIKA INTIP DIMENSI ASLI GAMBAR ---
+                    const img = new Image();
+                    img.src = dataUrl;
+                    img.onload = function() {
+                        // Simpan rasio gambar (Lebar / Tinggi) ke dalam dataset elemen
+                        // Contoh: Gambar Landscape bakal > 1, Potrait bakal < 1
+                        if (previewBox) {
+                            previewBox.dataset.imgRatio = img.width / img.height;
+                        }
+                        
+                        if (isDiv) {
+                            // Update background kotak preview
+                            previewBox.style.backgroundImage = `url('${dataUrl}')`;
+                            // Langsung sinkronkan visual miniatur sesuai mode yang terpilih
+                            updateMiniPreview(); 
+                        } else {
+                            // Jika targetnya elemen <img> (seperti Avatar)
+                            previewBox.src = dataUrl;
+                        }
+                        console.log("Gambar terbaca:", img.width, "x", img.height, "Ratio:", previewBox.dataset.imgRatio);
+                    };
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+
+
+
+       function applyDesktopPreview() {
+            const previewBox = document.getElementById('preview-bg-box');
+            const desktop = document.getElementById('desktop');
+            
+            // Proteksi: Jika elemen belum ada di DOM (Settings belum dibuka), stop di sini.
+            if (!previewBox || !desktop) return; 
+
+            //const mode = document.getElementById('set-bg-mode').value;            
+            //const color = document.getElementById('set-bg-color').value;
+            
+            // PASTIKAN: Ambil dari localStorage jika element select tidak ditemukan (saat awal loading)
+            // Atau ambil langsung dari dropdown jika jendela settings sedang terbuka
+            const modeSelect = document.getElementById('set-bg-mode');
+            const mode = modeSelect ? modeSelect.value : (localStorage.getItem("desktopBgMode") || "stretch");
+            
+            const colorInput = document.getElementById('set-bg-color');
+            const color = colorInput ? colorInput.value : (localStorage.getItem("desktopBgColor") || "#2c3e50");
+            
+            // 1. Sinkronkan Warna
+            previewBox.style.backgroundColor = color;
+            desktop.style.backgroundColor = color;
+
+            // 2. Sinkronkan Gambar (DENGAN VALIDASI ANTI-404)
+            const currentImg = previewBox.style.backgroundImage;
+            if (currentImg && currentImg !== "none" && currentImg !== "undefined" && currentImg !== "") {
+                desktop.style.backgroundImage = currentImg;
+            } else {
+                desktop.style.backgroundImage = "none";
+            }
+
+            // 3. Sinkronkan Mode (Gunakan satu blok pengecekan untuk keduanya)
+            if (mode === "stretch") {
+                previewBox.style.backgroundSize = "100% 100%";
+                previewBox.style.backgroundRepeat = "no-repeat";
+                
+                desktop.style.backgroundSize = "100% 100%";
+                desktop.style.backgroundRepeat = "no-repeat";
+            } else if (mode === "center") {
+                previewBox.style.backgroundSize = "auto";
+                previewBox.style.backgroundRepeat = "no-repeat";
+                
+                desktop.style.backgroundSize = "auto";
+                desktop.style.backgroundRepeat = "no-repeat";
+                desktop.style.backgroundPosition = "center";
+            } else { // Tile
+                previewBox.style.backgroundSize = "50%"; // Preview diperkecil biar kelihatan tile-nya
+                previewBox.style.backgroundRepeat = "repeat";
+                
+                desktop.style.backgroundSize = "auto";
+                desktop.style.backgroundRepeat = "repeat";
+            }
+        }
+
+
+        // 5. Clear Desktop Image
+        function clearDesktopImg() {
+            const previewBox = document.getElementById('preview-bg-box');
+            if (previewBox) {
+                previewBox.style.backgroundImage = 'none'; // Kosongkan kotak preview
+            }
+            
+            const bgInput = document.getElementById('bg-input');
+            if (bgInput) {
+                bgInput.value = ""; // Reset input file-nya
+            }
+            
+            // JANGAN PANGGIL applyDesktopPreview() DI SINI!
+            console.log("Kotak preview dikosongkan.");
+        }
+
+
+        // 6. Global Monaco Update
+        function updateAllMonacoEditors() {
+            const newTheme = document.getElementById('set-monaco-theme').value;
+            const newFont = document.getElementById('set-monaco-font').value;
+            const newSize = parseInt(document.getElementById('set-monaco-size').value) || 14; // Ambil angka font size
+
+            // Simpan semuanya
+            localStorage.setItem("sysMonacoTheme", newTheme);
+            localStorage.setItem("sysMonacoFont", newFont);
+            localStorage.setItem("sysMonacoSize", newSize);
+
+                if (typeof monaco !== "undefined") {
+                        monaco.editor.setTheme(newTheme);
+                    }
+            // Update semua editor yang sedang terbuka dalam objek global editors
+            // Update SEMUA editor yang lagi terbuka
+            Object.values(editors).forEach(editorInstance => {
+                if (editorInstance) {
+                    editorInstance.updateOptions({
+                        fontFamily: newFont,
+                        fontSize: newSize // Sekarang dinamis ikut input user
+                    });
+                }
+            });
+        }
+
+     async function saveAllSettings() {
+            const uuid = localStorage.getItem("webos_uuid");
+            //const GAS_URL = "URL_SCRIPT_GOOGLE_KAMU_DI_SINI";
+
+            // 1. Ambil data dari UI
+            const avatarImg = document.getElementById('preview-avatar').src;
+            const previewBox = document.getElementById('preview-bg-box');
+            const bgRaw = previewBox ? previewBox.style.backgroundImage : "";
+            let cleanBgData = bgRaw.includes("data:image") ? bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : null;
+
+            // 2. Siapkan UI Progress Bar (Gunakan SweetAlert2 atau UI milikmu)
+            Swal.fire({
+                title: 'Menyinkronkan data...',
+                html: '<div style="width:100%; background:#eee; height:20px; border-radius:10px; overflow:hidden;">' +
+                    '<div id="real-prog-bar" style="width:0%; background:#3498db; height:100%; transition:0.3s;"></div>' +
+                    '</div><p id="prog-text" style="margin-top:10px;">Menyiapkan...</p>',
+                showConfirmButton: false,
+                allowOutsideClick: false
+            });
+
+            const updateUI = (percent, text) => {
+                document.getElementById('real-prog-bar').style.width = percent + "%";
+                document.getElementById('prog-text').innerText = text + " (" + percent + "%)";
+            };
+
+            try {
+                // --- TAHAP 1: KIRIM AVATAR (CHUNK) ---
+                if (avatarImg.startsWith("data:image")) {
+                    const chunkSize = 50000; // 50KB
+                    const total = Math.ceil(avatarImg.length / chunkSize);
+                    for (let i = 0; i < total; i++) {
+                        const chunk = avatarImg.slice(i * chunkSize, (i + 1) * chunkSize);
+                        await fetch(GAS_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "avatar", chunk: chunk })
+                        });
+                        updateUI(Math.round(((i + 1) / total) * 50), "Mengirim Foto Profil..."); // 50% pertama untuk avatar
+                    }
+                }
+
+                // --- TAHAP 2: KIRIM WALLPAPER (CHUNK) ---
+                if (cleanBgData) {
+                    const chunkSize = 50000;
+                    const total = Math.ceil(cleanBgData.length / chunkSize);
+                    for (let i = 0; i < total; i++) {
+                        const chunk = cleanBgData.slice(i * chunkSize, (i + 1) * chunkSize);
+                        await fetch(GAS_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "bg", chunk: chunk })
+                        });
+                        updateUI(50 + Math.round(((i + 1) / total) * 40), "Mengirim Wallpaper..."); // 40% berikutnya
+                    }
+                }
+
+                // --- TAHAP 3: FINAL PUSH (UPDATE PROFILE) ---
+                updateUI(95, "Memproses di Cloud...");
+                const payload = {
+                    action: "UPDATE_PROFILE",
+                    uuid: uuid,
+                    useChunks: true, // INI KUNCINYA: Memberitahu GAS untuk ambil data dari PropertiesService
+                    username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
+                    password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
+                    theme: document.getElementById('set-win-theme').value,
+                    region: document.getElementById('set-region').value,
+                    bgColor: document.getElementById('set-bg-color').value,
+                    bgMode: document.getElementById('set-bg-mode').value,
+                    monacoTheme: document.getElementById('set-monaco-theme').value,
+                    monacoFont: document.getElementById('set-monaco-font').value,
+                    monacoSize: document.getElementById('set-monaco-size').value,
+                    dateFormat: document.getElementById('set-date-format').value,
+                    hourFormat: document.getElementById('set-hour-format').value
+                };
+
+                const finalRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+                const result = await finalRes.json();
+
+                if (result.status === "success") {
+                    updateUI(100, "Selesai!");
+                    OS.notify("Sukses", "Profil diperbarui!", "success");
+                    setTimeout(() => location.reload(), 1500); // Reload agar semua tema & foto berubah
+                } else {
+                    throw new Error(result.msg);
+                }
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Gagal!', 'Terjadi kesalahan: ' + err.message, 'error');
+            }
+        }
+
+
+
+
+
+        function updateClock() {
+            const clockEl = document.getElementById('clock');
+            if (!clockEl) return;
+
+            const region = localStorage.getItem("sysRegion") || "id-ID";
+            const hour12 = localStorage.getItem("sysHourFormat") === "12h";
+            const dateFormat = localStorage.getItem("sysDateFormat") || "dd/MM/yyyy";
+
+            const now = new Date();
+
+            // 1. Ambil Komponen Jam secara terpisah agar bisa dimanipulasi
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Logika Berkedip: Munculkan titik dua jika detik genap, transparan jika ganjil
+            const blink = now.getSeconds() % 2 === 0 ? ":" : "<span style='opacity:0;'>:</span>";
+            
+            // Gabungkan Jam (Format 24 jam atau 12 jam)
+            let displayHours = hours;
+            let ampm = "";
+            if (hour12) {
+                const h = now.getHours();
+                ampm = h >= 12 ? " PM" : " AM";
+                displayHours = String(h % 12 || 12).padStart(2, '0');
+            }
+
+            const timeStr = `${displayHours}${blink}${minutes}${blink}${seconds}${ampm}`;
+
+            // 2. Format Tanggal (Tetap sama)
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const dayName = now.toLocaleDateString(region, { weekday: 'long' });
+            const monthName = now.toLocaleDateString(region, { month: 'long' });
+
+            let dateStr = dateFormat
+                .replace("dddd", dayName)
+                .replace("MMMM", monthName)
+                .replace("dd", day)
+                .replace("MM", month)
+                .replace("yyyy", year);
+
+            // Tampilkan dengan style agar rata kanan
+            clockEl.innerHTML = `
+                <div style="text-align:right; line-height:1.2;">
+                    <span style="font-family: monospace; font-size: 14px;">${timeStr}</span><br>
+                    <span style="font-size:10px; font-weight:normal; opacity:0.8;">${dateStr}</span>
+                </div>`;
+        }
+
+
+        function applyTheme(themeName) {
+            // 1. Hapus semua class theme lama di body
+            document.body.classList.remove('theme-light', 'theme-bluedark', 'theme-greendark');
+            
+            // 2. Tambah class baru jika bukan default (dark)
+            if (themeName !== 'dark') {
+                document.body.classList.add('theme-' + themeName);
+            }
+            
+            // 3. Simpan ke localStorage
+            localStorage.setItem("sysWinTheme", themeName);
+        }
+
+        function updateMiniPreview() {
+            const previewBox = document.getElementById('preview-bg-box');
+            if (!previewBox) return;
+
+            const mode = document.getElementById('set-bg-mode').value;
+            const color = document.getElementById('set-bg-color').value;
+            const imgRatio = parseFloat(previewBox.dataset.imgRatio) || 1; // Default 1:1
+            
+            previewBox.style.backgroundColor = color;
+            
+            if (mode === "stretch") {
+                previewBox.style.backgroundSize = "100% 100%"; // Dipaksa penuh
+            } else if (mode === "center") {
+                // Logika Smart Center: 
+                // Jika gambar lebih lebar dari kotak, lebarnya jadi 40%. 
+                // Jika lebih tinggi, tingginya yang jadi 40%.
+                if (imgRatio > 1) {
+                    previewBox.style.backgroundSize = "40% auto"; 
+                } else {
+                    previewBox.style.backgroundSize = "auto 40%";
+                }
+                previewBox.style.backgroundPosition = "center";
+            } else { // Tile
+                // Ubin kecil yang tetep proporsional (ngikutin rasio asli gambarnya)
+                const tileW = 25; 
+                const tileH = 25 / imgRatio;
+                previewBox.style.backgroundSize = `${tileW}px ${tileH}px`;
+                previewBox.style.backgroundRepeat = "repeat";
+            }
+        }
+
+        // Fungsi untuk menghitung ukuran string dalam KB/MB
+        function getPayloadSize(obj) {
+            const str = JSON.stringify(obj);
+            const bytes = new TextEncoder().encode(str).length;
+            if (bytes < 1024) return bytes + " Bytes";
+            return (bytes / 1024).toFixed(2) + " KB";
+        }
+
+
+
+
+       // 3. Cara Pakainya di Kode Lo
+        //Sekarang, setiap kali lo mau nampilin pesan, cukup panggil OS.notify. Contoh:
+        //Ganti alert biasa:
+        //OS.notify("Berhasil", "Profil diperbarui", "success");
+        //Ganti loading:
+        //OS.showLoading("Menyimpan ke Cloud...");
+        //Ganti konfirmasi hapus:
+        //if (await OS.confirm("Hapus File?", "Data tidak bisa balik lagi")) { ...hapus... }
+        const OS = {
+        // Notifikasi Biasa (Success, Error, Warning, Info)
+        notify: function(title, text, icon = 'info') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                heightAuto: false, // Penting agar layout desktop gak rusak
+                confirmButtonColor: 'var(--swal-confirm)',
+                background: 'var(--swal-bg)',
+                color: 'var(--swal-text)',
+                backdrop: `rgba(0,0,0,0.4)`
+            });
+        },
+
+        // Loading / Progress
+        showLoading: function(title = 'Processing...') {
+            Swal.fire({
+                title: title,
+                allowOutsideClick: false,
+                heightAuto: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        },
+
+        // Konfirmasi (Ya/Tidak)
+        confirm: async function(title, text) {
+            const result = await Swal.fire({
+                title: title,
+                text: text,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel',
+                heightAuto: false,
+                confirmButtonColor: 'var(--swal-confirm)',
+            });
+            return result.isConfirmed;
+        }
+    };
 
 // 4. EVENT LISTENERS
 //document.getElementById('start-trigger').onclick = () => {
