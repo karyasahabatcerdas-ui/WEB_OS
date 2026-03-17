@@ -11,12 +11,53 @@
      <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js" integrity="sha512-pnPZhx5S+z5FSVwy62gcyG2Mun8h6R+PG01MidzU+NGF06/ytcm2r6+AaWMBXAnDHsdHWtsxS0dH8FBKA84FlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <style>
-        :root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }
-        [data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }
+        /* Warna Default (Dark) */
+        :root { 
+            --bg-panel: rgba(30, 30, 30, 0.85); 
+            --text-main: #f0f0f0; 
+            --accent: #007bff; 
+            --border: rgba(255,255,255,0.1); 
+        }
+
+        /* Tema Light */
+        body.theme-light { 
+            --bg-panel: rgba(240, 240, 240, 0.9); 
+            --text-main: #333; 
+            --accent: #0056b3; 
+            --border: rgba(0,0,0,0.1); 
+        }
+
+        /* Tema Blue Dark (Deep Ocean) */
+        body.theme-bluedark { 
+            --bg-panel: rgba(10, 25, 47, 0.9); 
+            --text-main: #64ffda; 
+            --accent: #00bcd4; 
+            --border: rgba(100, 255, 218, 0.2); 
+        }
+
+        /* Tema Green Dark (Forest Grey) */
+        body.theme-greendark { 
+            --bg-panel: rgba(26, 31, 26, 0.9); 
+            --text-main: #a8d5a2; 
+            --accent: #2ecc71; 
+            --border: rgba(46, 204, 113, 0.2); 
+        }
+
+        /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
+        .taskbar { background: var(--bg-panel); color: var(--text-main); border-top: 1px solid var(--border); }
+        .win-header { background: var(--bg-panel); color: var(--text-main); border-bottom: 1px solid var(--border); }
+        .sub-window { background: var(--bg-panel); border: 1px solid var(--border); }
+
+
+
+        /*:root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }*/
+        /*[data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }*/
+
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #2c3e50; }
         #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }
         
-        .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
+        /* .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
+        */
         .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
         .start-btn:hover { background: rgba(0,0,0,0.1); }
 
@@ -287,6 +328,8 @@
             const name = sessionStorage.getItem("userName") || "Guest";
             let photo = sessionStorage.getItem("userPhoto");
             const bgUrl = sessionStorage.getItem("userWallpaper"); // Ambil URL Wallpaper
+            const savedTheme = localStorage.getItem("sysWinTheme") || "dark";
+            applyTheme(savedTheme);
 
             // Fallback kalau photo kosong
             if (!photo || photo === "undefined") {
@@ -691,6 +734,10 @@
             require(['vs/editor/editor.main'], async function() {
                 try {
                     let finalContent = ""; 
+                    // Di dalam initMonacoInWin() index.html
+                    const savedTheme = localStorage.getItem("sysMonacoTheme") || "vs-dark";
+                    const savedFont = localStorage.getItem("sysMonacoFont") || "'Consolas', monospace";
+                    const savedSize = parseInt(localStorage.getItem("sysMonacoSize")) || 14;
 
                     // LOGIKA EKSPLISIT: Ambil konten jika ada ID
                     if (fileId && fileId !== "") {
@@ -710,9 +757,10 @@
                     editors[winId] = monaco.editor.create(document.getElementById(`container-${winId}`), {
                         value: finalContent,
                         language: langMap[ext] || 'plaintext',
-                        theme: 'vs-dark',
+                        theme: savedTheme, // Pakai hasil simpanan
                         automaticLayout: true,
-                        fontSize: 14,
+                        fontFamily: savedFont, // Pakai hasil simpanan
+                        fontSize: savedSize, // Pasang ukuran simpanan
                         fixedOverflowWidgets: true, 
                         minimap: { enabled: false },
                         scrollBeyondLastLine: false
@@ -866,7 +914,7 @@
                                     </div>
                                 </div>
                             </div>
-                                                <!-- B1. DESKTOP SETTING -->
+                            <!-- B1. DESKTOP SETTING -->
                             <div id="sec-desktop" class="settings-tab-content" style="display:none;">
                                 <h3 style="margin-top:0; font-size:16px;">Desktop Appearance</h3>
                                 <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
@@ -936,6 +984,14 @@
                                             <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
                                             <option value="'Source Code Pro', monospace">Source Code Pro</option>
                                         </select>
+                                    </div>
+                                    <!-- Tambahkan di bawah select Font Family pada Bagian 2 -->
+                                    <div style="margin-top: 10px;">
+                                        <label style="font-size:11px; font-weight:bold; color:#666;">Font Size (px):</label>
+                                        <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                                            <input type="number" id="set-monaco-size" value="${localStorage.getItem('sysMonacoSize') || 14}" min="10" max="30" style="width:60px; padding:6px; border-radius:6px; border:1px solid #ddd;">
+                                            <span style="font-size:11px; color:#888;">Range: 10 - 30px</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1071,13 +1127,25 @@
         function updateAllMonacoEditors() {
             const theme = document.getElementById('set-monaco-theme').value;
             const font = document.getElementById('set-monaco-font').value;
-            
+            const newSize = parseInt(document.getElementById('set-monaco-size').value) || 14; // Ambil angka font size
+
+            // Simpan semuanya
+            localStorage.setItem("sysMonacoTheme", newTheme);
+            localStorage.setItem("sysMonacoFont", newFont);
+            localStorage.setItem("sysMonacoSize", newSize);
+
+                if (typeof monaco !== "undefined") {
+                        monaco.editor.setTheme(newTheme);
+                    }
             // Update semua editor yang sedang terbuka dalam objek global editors
-            Object.values(editors).forEach(editor => {
-                monaco.editor.setTheme(theme);
-                editor.updateOptions({
-                    fontFamily: font
-                });
+            // Update SEMUA editor yang lagi terbuka
+            Object.values(editors).forEach(editorInstance => {
+                if (editorInstance) {
+                    editorInstance.updateOptions({
+                        fontFamily: newFont,
+                        fontSize: newSize // Sekarang dinamis ikut input user
+                    });
+                }
             });
         }
 
@@ -1106,7 +1174,19 @@
                     // Terapkan perubahan visual secara lokal
                     localStorage.setItem("desktopBgColor", document.getElementById('set-bg-color').value);
                     localStorage.setItem("desktopBgMode", document.getElementById('set-bg-mode').value);
+                    // SIMPAN SETTINGAN REGION & WAKTU
+                    localStorage.setItem("sysRegion", document.getElementById('set-region').value);
+                    localStorage.setItem("sysDateFormat", document.getElementById('set-date-format').value);
+                    localStorage.setItem("sysHourFormat", document.getElementById('set-hour-format').value);
                     applyDesktopPreview();
+                    // Jalankan update Monaco seketika
+                    updateAllMonacoEditors();
+                    // Refresh jam seketika agar tidak perlu nunggu detik berikutnya
+                    updateClock();
+                     // Ambil nilai dari select 'set-win-theme'
+                    const selectedTheme = document.getElementById('set-win-theme').value;
+                    applyTheme(selectedTheme);
+
                     
                     Swal.fire("Success!", "Profile and Wallpaper saved to Drive.", "success");
                 }
@@ -1152,6 +1232,18 @@
             clockEl.innerHTML = `<div style="text-align:right;">${timeStr}<br><span style="font-size:10px; font-weight:normal;">${dateStr}</span></div>`;
         }
 
+        function applyTheme(themeName) {
+            // 1. Hapus semua class theme lama di body
+            document.body.classList.remove('theme-light', 'theme-bluedark', 'theme-greendark');
+            
+            // 2. Tambah class baru jika bukan default (dark)
+            if (themeName !== 'dark') {
+                document.body.classList.add('theme-' + themeName);
+            }
+            
+            // 3. Simpan ke localStorage
+            localStorage.setItem("sysWinTheme", themeName);
+        }
 
 
     </script>
