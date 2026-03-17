@@ -904,7 +904,8 @@
 
             const currentName = sessionStorage.getItem("userName") || "User";
             const currentPhoto = sessionStorage.getItem("userPhoto") || `https://ui-avatars.com/api/?name=${currentName}&background=random&color=fff`;
-            const currentBg = localStorage.getItem("desktopBg") || "";
+            //const currentBg = localStorage.getItem("desktopBg") || "";
+            const currentBg = sessionStorage.getItem("userWallpaper") || localStorage.getItem("desktopBg") || "";
             const currentBgColor = localStorage.getItem("desktopBgColor") || "#2c3e50";
 
             const winHtml = `
