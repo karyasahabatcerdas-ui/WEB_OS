@@ -209,6 +209,26 @@
         let monacoQueue = [];      // Antrean fungsi jika belum ready  
 
 
+        // KRUSIAL: Jalankan ini langsung saat script terbaca agar background muncul instan
+        (function applyImmediateStyles() {
+            const bg = localStorage.getItem("desktopBg");
+            const color = localStorage.getItem("desktopBgColor") || "#2c3e50";
+            const mode = localStorage.getItem("desktopBgMode") || "stretch";
+
+            // Gunakan CSS murni ke elemen body atau #desktop jika sudah ada
+            const style = document.createElement('style');
+            style.innerHTML = `
+                #desktop {
+                    background-color: ${color} !important;
+                    background-image: ${bg ? `url('${bg}')` : 'none'} !important;
+                    background-size: ${mode === 'stretch' ? '100% 100%' : 'auto'} !important;
+                    background-repeat: ${mode === 'tile' ? 'repeat' : 'no-repeat'} !important;
+                }
+            `;
+            document.head.appendChild(style);
+        })();
+
+        // menuliskan IP addres ke component DCOM agar siap dulu
         document.addEventListener('DOMContentLoaded', function() {
             // UI sudah siap, sekarang panggil fungsi IP
             getVisitorIP(function(ip) {
@@ -335,16 +355,32 @@
                 console.log("Response diterima dari server");
                 const result = await response.json();
                 console.log("Hasil JSON:", result);
-                if (result.status === "success") {
-                    console.log("habis dapat sukses :", result.status);
+
+               if (result.status === "success") {
+                    console.log("Login sukses, menyinkronkan pengaturan...");
                     Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
 
+                    // 1. Simpan Status Autentikasi Dasar
                     sessionStorage.setItem("isAuth", "true");
                     sessionStorage.setItem("userName", result.user);
                     sessionStorage.setItem("userPhoto", result.photo || "");
-                    sessionStorage.setItem("userWallpaper", result.newWallpaper || "");
- 
+                    
+                    // 2. Simpan Wallpaper (Gunakan result.wallpaper dari database)
+                    const bgUrl = result.wallpaper || "";
+                    sessionStorage.setItem("userWallpaper", bgUrl);
+                    localStorage.setItem("desktopBg", bgUrl); // Simpan permanen agar tidak putih saat reload
+
+                    // 3. Sinkronkan Pengaturan Visual (Data dari Kolom H)
+                    const s = result.settings || {}; 
+                    localStorage.setItem("desktopBgColor", s.bgColor || "#2c3e50");
+                    localStorage.setItem("desktopBgMode", s.bgMode || "stretch");
+                    localStorage.setItem("sysWinTheme", s.theme || "dark");
+                    localStorage.setItem("sysRegion", s.region || "id-ID");
+                    localStorage.setItem("sysDateFormat", s.dateFormat || "dd/MM/yyyy");
+                    localStorage.setItem("sysHourFormat", s.hourFormat || "24h");
+
+                    // 4. Nyalakan OS dengan data yang sudah lengkap
                     initOS();
                 } else {
                     Swal.close();
