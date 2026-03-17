@@ -1374,17 +1374,13 @@
         }
 
       async function saveAllSettings() {
-            // 1. Ambil data Wallpaper & bersihkan format CSS url()
-            const previewBox = document.getElementById('preview-bg-box');
-            const bgRaw = previewBox ? previewBox.style.backgroundImage : "";
+            // 1. Payload & Data tetap pakai logika asli kamu
+            const bgRaw = document.getElementById('preview-bg-box').style.backgroundImage;
             let cleanBgData = null;
-            
-            // Proteksi: Hanya ambil data jika itu adalah file baru (Base64)
             if (bgRaw && bgRaw.includes("data:image")) {
                 cleanBgData = bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
             }
 
-            // 2. Susun Payload
             const payload = {
                 action: "UPDATE_PROFILE",
                 uuid: localStorage.getItem("webos_uuid"),
@@ -1403,54 +1399,100 @@
                 hourFormat: document.getElementById('set-hour-format').value
             };
 
-            // 3. Tampilkan Loading (Ganti Progress Bar yang bikin error)
-            OS.showLoading('Menyinkronkan data ke Cloud...');
+            const totalSize = getPayloadSize(payload);
 
-            try {
-                // 4. Kirim menggunakan fetch (Tanpa Content-Type header agar tidak memicu Preflight/CORS)
-                const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors", // Mode ini seringkali diperlukan untuk GAS jika CORS bermasalah
-                    body: JSON.stringify(payload)
-                });
+            // 2. Tampilkan Swal (Sesuai UI yang kamu inginkan)
+            Swal.fire({
+                title: 'Uploading to Cloud...',
+                html: `
+                    <div style="font-size:12px; color:#666; margin-bottom:10px; text-align:left;">
+                        <i class="fas fa-file-upload"></i> Total Data: <b>${totalSize}</b><br>
+                        <small id="prog-detail">Menghubungkan ke server...</small>
+                    </div>
+                    <div style="width:100%; height:12px; background:#eee; border-radius:6px; overflow:hidden; border:1px solid #ddd;">
+                        <div id="real-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #007bff, #00c6ff); transition: width 0.3s ease;"></div>
+                    </div>
+                    <div id="prog-percent" style="font-size:11px; font-weight:bold; margin-top:5px; color:#007bff;">0%</div>
+                `,
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-                // Catatan: Dalam mode 'no-cors', kita tidak bisa membaca response JSON.
-                // Kita asumsikan sukses jika tidak ada error network, lalu refresh UI.
-                
-                // Simpan ke Local Storage agar perubahan langsung terasa di sisi Client
-                localStorage.setItem("desktopBgColor", payload.bgColor);
-                localStorage.setItem("desktopBgMode", payload.bgMode);
-                localStorage.setItem("sysWinTheme", payload.theme);
-                localStorage.setItem("sysRegion", payload.region);
-                localStorage.setItem("sysDateFormat", payload.dateFormat);
-                localStorage.setItem("sysHourFormat", payload.hourFormat);
-                
-                // Update Nama & Foto di UI (Session)
-                const newUsername = document.getElementById('set-username').value;
-                if (!document.getElementById('chk-user').checked && newUsername) {
-                    sessionStorage.setItem("userName", newUsername);
-                    if (document.getElementById('user-name-span')) document.getElementById('user-name-span').innerText = newUsername;
+            // 3. PENGGANTI FETCH: Pakai XHR supaya Progress Bar bisa gerak
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", GAS_URL, true);
+
+            // --- LOGIKA PROGRESS BAR ---
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    const bar = document.getElementById('real-progress-bar');
+                    const txt = document.getElementById('prog-percent');
+                    const det = document.getElementById('prog-detail');
+                    
+                    if (bar) bar.style.width = percent + "%";
+                    if (txt) txt.innerText = percent + "%";
+                    if (det) det.innerText = `Mengirim: ${(e.loaded/1024).toFixed(1)} KB / ${(e.total/1024).toFixed(1)} KB`;
+                    
+                    if (percent === 100 && det) det.innerText = "Data terkirim! Memproses di Cloud...";
                 }
+            };
 
-                // Terapkan Perubahan Langsung
-                applyDesktopPreview(); 
-                updateAllMonacoEditors();
-                updateClock();
-                applyTheme(payload.theme);
+            // --- LOGIKA SUKSES (Persis seperti kode asli kamu) ---
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.status === "success") {
+                        // 1. Update Nama & Foto (Logika kamu)
+                        const newUsername = document.getElementById('set-username').value;
+                        if (!document.getElementById('chk-user').checked && newUsername) {
+                            sessionStorage.setItem("userName", newUsername);
+                            if (document.getElementById('user-name-span')) document.getElementById('user-name-span').innerText = newUsername;
+                        }
 
+                        if (result.newAvatar) {
+                            sessionStorage.setItem("userPhoto", result.newAvatar);
+                            if (document.getElementById('user-photo-img')) document.getElementById('user-photo-img').src = result.newAvatar;
+                        }
+
+                        // 2. Update Wallpaper & LocalStorage (Logika kamu)
+                        if (result.newWallpaper) {
+                            sessionStorage.setItem("userWallpaper", result.newWallpaper);
+                            localStorage.setItem("desktopBg", result.newWallpaper);
+                            const pb = document.getElementById('preview-bg-box');
+                            if (pb) pb.style.backgroundImage = `url('${result.newWallpaper}')`;
+                        }
+
+                        localStorage.setItem("desktopBgColor", payload.bgColor);
+                        localStorage.setItem("desktopBgMode", payload.bgMode);
+                        localStorage.setItem("sysWinTheme", payload.theme);
+                        localStorage.setItem("sysRegion", payload.region);
+                        localStorage.setItem("sysDateFormat", payload.dateFormat);
+                        localStorage.setItem("sysHourFormat", payload.hourFormat);
+
+                        // 3. Update UI & Tutup
+                        applyDesktopPreview(); 
+                        updateAllMonacoEditors();
+                        updateClock();
+                        applyTheme(payload.theme);
+
+                        Swal.close();
+                        OS.notify("Success!", "Semua perubahan tersimpan!", "success");
+                    }
+                } else {
+                    Swal.close();
+                    OS.notify("Error", "Gagal menghubungi server.", "error");
+                }
+            };
+
+            xhr.onerror = () => {
                 Swal.close();
-                OS.notify("Berhasil", "Pengaturan telah dikirim ke Cloud!", "success");
-                
-                // Opsional: Tutup jendela settings
-                closeWin('win-settings');
+                OS.notify("Error", "Koneksi terputus.", "error");
+            };
 
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                Swal.close();
-                OS.notify("Koneksi Gagal", "Pastikan internet stabil dan GAS URL benar.", "error");
-            }
+            xhr.send(JSON.stringify(payload));
         }
-
 
 
 
