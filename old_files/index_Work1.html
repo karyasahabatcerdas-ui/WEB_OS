@@ -332,11 +332,13 @@
             localStorage.setItem("webos_uuid", uuid);
 
             //Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
-            //OS.showLoading('Authenticating...');
+            OS.showLoading('Authenticating...');
 
             console.log("habis swal loading");
             const ipField = document.getElementById('ip-addr');
+
             const clientIP = (ipField) ? ipField.textContent : "IP: tidak sempat diambil" ;
+
             console.log("habis dapat ip", clientIP);
 
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
@@ -351,7 +353,7 @@
 
                 const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
                 console.log("habis dapat browser :", deviceInfo);
-          
+            try {
 
                 const payload = {
                         action: "LOGIN",
@@ -362,39 +364,19 @@
                         wallpaper: (typeof wallpaper !== 'undefined') ? wallpaper : "" // Proteksi jika wallpaper null
                     };
                     console.log("Data yang dikirim:", payload);
-                    const datasize = getPayloadSize(payload);
-
-                    Swal.fire({
-                        title: 'Authenticating...',
-                        html: `
-                            <div style="font-size:12px; color:#666; margin-bottom:10px;">
-                                <i class="fas fa-cloud-upload-alt"></i> Mengirim Paket Auth...<br>
-                                <small>Packet Size: <b>${dataSize}</b></small>
-                            </div>
-                        `,
-                        allowOutsideClick: false,
-                        didOpen: () => { Swal.showLoading(); }
-                    });
-
-            try {
                 // 3. Kirim ke GAS
                 const response = await fetch(GAS_URL, {
                     method: "POST",
                     body: JSON.stringify(payload)
                     
                 });
-               // console.log("Response diterima dari server");
+                console.log("Response diterima dari server");
                 const result = await response.json();
-                //console.log("Hasil JSON:", result);
+                console.log("Hasil JSON:", result);
 
                if (result.status === "success") {
                     console.log("Login sukses, menyinkronkan pengaturan...");
-                    // --- GANTI TEKS SWAL (Jangan ditutup dulu) ---
-                    const swalTitle = document.getElementById('swal2-title');
-                    const swalHtml = document.querySelector('.swal2-html-container');
-                    if(swalTitle) swalTitle.innerText = "Syncing Settings...";
-                    if(swalHtml) swalHtml.innerHTML = "<small>Applying your personalized desktop...</small>"
-                    
+                    Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
 
                     // 1. Simpan Status Autentikasi Dasar
@@ -422,9 +404,6 @@
 
                     // 4. Nyalakan OS dengan data yang sudah lengkap
                     initOS();
-                    setTimeout(() => {
-                                Swal.close();
-                            }, 300);
                 } else {
                     Swal.close();
                     //Swal.fire("Access Denied", result.msg, "error");
@@ -1373,14 +1352,17 @@
             });
         }
 
-      async function saveAllSettings() {
-            // 1. Payload & Data tetap pakai logika asli kamu
+       async function saveAllSettings() {
+            OS.showLoading("Syncing to Cloud...");
+
             const bgRaw = document.getElementById('preview-bg-box').style.backgroundImage;
             let cleanBgData = null;
+
             if (bgRaw && bgRaw.includes("data:image")) {
                 cleanBgData = bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
             }
 
+            // 1. TAMBAHKAN DATA SETTING KE PAYLOAD
             const payload = {
                 action: "UPDATE_PROFILE",
                 uuid: localStorage.getItem("webos_uuid"),
@@ -1388,9 +1370,13 @@
                 password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
                 avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? document.getElementById('preview-avatar').src : null,
                 bgData: cleanBgData,
+
+                // --- TAMBAHKAN INI UNTUK MONACO ---
                 monacoTheme: document.getElementById('set-monaco-theme').value,
                 monacoFont: document.getElementById('set-monaco-font').value,
                 monacoSize: document.getElementById('set-monaco-size').value,
+                
+                // --- DATA BARU UNTUK KOLOM H ---
                 bgColor: document.getElementById('set-bg-color').value,
                 bgMode: document.getElementById('set-bg-mode').value,
                 theme: document.getElementById('set-win-theme').value,
@@ -1399,101 +1385,76 @@
                 hourFormat: document.getElementById('set-hour-format').value
             };
 
-            const totalSize = getPayloadSize(payload);
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
 
-            // 2. Tampilkan Swal (Sesuai UI yang kamu inginkan)
-            Swal.fire({
-                title: 'Uploading to Cloud...',
-                html: `
-                    <div style="font-size:12px; color:#666; margin-bottom:10px; text-align:left;">
-                        <i class="fas fa-file-upload"></i> Total Data: <b>${totalSize}</b><br>
-                        <small id="prog-detail">Menghubungkan ke server...</small>
-                    </div>
-                    <div style="width:100%; height:12px; background:#eee; border-radius:6px; overflow:hidden; border:1px solid #ddd;">
-                        <div id="real-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #007bff, #00c6ff); transition: width 0.3s ease;"></div>
-                    </div>
-                    <div id="prog-percent" style="font-size:11px; font-weight:bold; margin-top:5px; color:#007bff;">0%</div>
-                `,
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            // 3. PENGGANTI FETCH: Pakai XHR supaya Progress Bar bisa gerak
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", GAS_URL, true);
-
-            // --- LOGIKA PROGRESS BAR ---
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    const bar = document.getElementById('real-progress-bar');
-                    const txt = document.getElementById('prog-percent');
-                    const det = document.getElementById('prog-detail');
-                    
-                    if (bar) bar.style.width = percent + "%";
-                    if (txt) txt.innerText = percent + "%";
-                    if (det) det.innerText = `Mengirim: ${(e.loaded/1024).toFixed(1)} KB / ${(e.total/1024).toFixed(1)} KB`;
-                    
-                    if (percent === 100 && det) det.innerText = "Data terkirim! Memproses di Cloud...";
-                }
-            };
-
-            // --- LOGIKA SUKSES (Persis seperti kode asli kamu) ---
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const result = JSON.parse(xhr.responseText);
-                    if (result.status === "success") {
-                        // 1. Update Nama & Foto (Logika kamu)
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                        // 1.1 UPDATE NAMA USER (Gunakan value dari input)
                         const newUsername = document.getElementById('set-username').value;
                         if (!document.getElementById('chk-user').checked && newUsername) {
                             sessionStorage.setItem("userName", newUsername);
-                            if (document.getElementById('user-name-span')) document.getElementById('user-name-span').innerText = newUsername;
+                            const nameEl = document.getElementById('user-name-span');
+                            if (nameEl) nameEl.innerText = newUsername; // Langsung ubah teks di Start Menu
                         }
 
+                        // 1.2. UPDATE FOTO PROFIL (Gunakan respon dari GAS)
                         if (result.newAvatar) {
                             sessionStorage.setItem("userPhoto", result.newAvatar);
-                            if (document.getElementById('user-photo-img')) document.getElementById('user-photo-img').src = result.newAvatar;
+                            const imgEl = document.getElementById('user-photo-img');
+                            if (imgEl) imgEl.src = result.newAvatar; // Langsung ubah gambar di Start Menu
                         }
 
-                        // 2. Update Wallpaper & LocalStorage (Logika kamu)
+                        // 1.3. UPDATE WALLPAPER (Gunakan respon dari GAS)
                         if (result.newWallpaper) {
                             sessionStorage.setItem("userWallpaper", result.newWallpaper);
                             localStorage.setItem("desktopBg", result.newWallpaper);
+                            
+                            // Update kotak preview agar tidak lagi menampilkan Base64
                             const pb = document.getElementById('preview-bg-box');
                             if (pb) pb.style.backgroundImage = `url('${result.newWallpaper}')`;
                         }
 
-                        localStorage.setItem("desktopBgColor", payload.bgColor);
-                        localStorage.setItem("desktopBgMode", payload.bgMode);
-                        localStorage.setItem("sysWinTheme", payload.theme);
-                        localStorage.setItem("sysRegion", payload.region);
-                        localStorage.setItem("sysDateFormat", payload.dateFormat);
-                        localStorage.setItem("sysHourFormat", payload.hourFormat);
-
-                        // 3. Update UI & Tutup
-                        applyDesktopPreview(); 
-                        updateAllMonacoEditors();
-                        updateClock();
-                        applyTheme(payload.theme);
-
-                        Swal.close();
-                        OS.notify("Success!", "Semua perubahan tersimpan!", "success");
+                    // 2. SIMPAN KE LOCAL STORAGE (Sesuai payload tadi)
+                    localStorage.setItem("desktopBgColor", payload.bgColor);
+                    localStorage.setItem("desktopBgMode", payload.bgMode);
+                    localStorage.setItem("sysWinTheme", payload.theme);
+                    localStorage.setItem("sysRegion", payload.region);
+                    localStorage.setItem("sysDateFormat", payload.dateFormat);
+                    localStorage.setItem("sysHourFormat", payload.hourFormat);
+                    
+                    // 3. Update Wallpaper & Aset (Foto Profil)
+                    if (result.newWallpaper) {
+                        localStorage.setItem("desktopBg", result.newWallpaper); 
+                        sessionStorage.setItem("userWallpaper", result.newWallpaper);
+                        const pb = document.getElementById('preview-bg-box');
+                        if (pb) pb.style.backgroundImage = `url('${result.newWallpaper}')`;
                     }
-                } else {
-                    Swal.close();
-                    OS.notify("Error", "Gagal menghubungi server.", "error");
+
+                    if (result.newAvatar) {
+                        sessionStorage.setItem("userPhoto", result.newAvatar);
+                        const imgEl = document.getElementById('user-photo-img');
+                        if (imgEl) imgEl.src = result.newAvatar;
+                    }
+
+                    // 4. Jalankan Update UI
+                    
+                    applyDesktopPreview(); 
+                    updateAllMonacoEditors();
+                    updateClock();
+                    applyTheme(payload.theme);
+
+                    OS.notify("Success!", "Semua perubahan tersimpan ke Cloud!", "success");
                 }
-            };
-
-            xhr.onerror = () => {
-                Swal.close();
-                OS.notify("Error", "Koneksi terputus.", "error");
-            };
-
-            xhr.send(JSON.stringify(payload));
+            } catch (e) {
+                console.error("Save Error:", e);
+                OS.notify("Error", "Gagal sinkronisasi ke server.", "error");
+            }
         }
-
 
 
         function updateClock() {
@@ -1592,13 +1553,6 @@
             }
         }
 
-        // Fungsi untuk menghitung ukuran string dalam KB/MB
-        function getPayloadSize(obj) {
-            const str = JSON.stringify(obj);
-            const bytes = new TextEncoder().encode(str).length;
-            if (bytes < 1024) return bytes + " Bytes";
-            return (bytes / 1024).toFixed(2) + " KB";
-        }
 
 
 
