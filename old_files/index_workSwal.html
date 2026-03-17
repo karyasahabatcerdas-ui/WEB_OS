@@ -190,8 +190,7 @@
         let windowCount = 0;
         const editors = {};
         const MONACO_VER = "0.53.0"; 
-        //const MONACO_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VER}/min/vs`;
-        const MONACO_BASE = `https://cdnjs.cloudflare.net`;
+        const MONACO_BASE = `https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/${MONACO_VER}/min/vs`;
         let isMonacoReady = false; // Flag status Monaco
         let isMonacoLoading = false; // Flag tambahan supaya tidak load berkali-kali
         let monacoQueue = [];      // Antrean fungsi jika belum ready  
@@ -211,37 +210,53 @@
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
             getWorkerUrl: function (workerId, label) {
-                // Mengarahkan worker ke file workerMain.js di repo kamu via JSDelivr
-                const workerPath = `${MONACO_BASE}/base/worker/workerMain.js`;
                 const code = `
-                    self.MonacoEnvironment = { baseUrl: '${MONACO_BASE}/' };
-                    importScripts('${workerPath}');
+                    self.MonacoEnvironment = { baseUrl: '${MONACO_BASE}' };
+                    importScripts('${MONACO_BASE}/base/worker/workerMain.js');
                 `;
                 return `data:text/javascript;charset=utf-8,${encodeURIComponent(code)}`;
             }
         };
 
-
         function loadMonacoCore(callback) {
-            if (isMonacoReady) { if (callback) callback(); return; }
+            if (isMonacoReady) {
+                if (callback) callback();
+                return;
+            }
+
             if (callback) monacoQueue.push(callback);
             if (isMonacoLoading) return;
 
             isMonacoLoading = true;
-            OS.showLoading('Memasok Engine Monaco 0.55.1 dari GitHub...');
+
+            // Tampilkan Progress Bar pakai Swal2
+            Swal.fire({
+                title: 'Memuat Editor...',
+                html: 'Sedang mengunduh mesin Monaco (pendaratan modul)...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            //OS.showLoading('Memuat Editor...');
 
             const script = document.createElement('script');
-            script.src = `${MONACO_BASE}/loader.js`; // Loader dari repo kamu
+            script.src = `${MONACO_BASE}/loader.min.js`;
             
-            script.onload = () => {
-                // Konfigurasi path ke folder 'min/vs' di repo kamu
-                require.config({ paths: { 'vs': MONACO_BASE } });
+            script.onerror = () => {
+                isMonacoLoading = false;
+                //Swal.fire("Gagal!", "Modul Monaco gagal mendarat. Cek koneksi.", "error");
+                OS.notify("Gagal!", "Modul Monaco gagal mendarat. Cek koneksi.", "error");
+            };
 
+            script.onload = () => {
+                // Fase 1: Loader mendarat, sekarang Fase 2: Inisialisasi Memori
+                require.config({ paths: { 'vs': MONACO_BASE } });
                 require(['vs/editor/editor.main'], function() {
                     isMonacoReady = true;
                     isMonacoLoading = false;
-                    Swal.close();
-                    console.log("Monaco 0.55.1 (GitHub/min) Ready!");
+                    
+                    // Tutup loading dan jalankan antrean
+                    Swal.close(); 
                     while (monacoQueue.length > 0) {
                         const nextTask = monacoQueue.shift();
                         nextTask();
@@ -250,7 +265,6 @@
             };
             document.head.appendChild(script);
         }
-
 
         async function sha256(str) {
             const buf = new TextEncoder().encode(str);
