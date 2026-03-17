@@ -195,7 +195,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxfpFq8FFO4AAF53h5VvFYzsoP3lfvUyNR5enoiJDf_shsASOFPi7Hy2B3FAfUeJcym/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyh8d72cCmUSUWJXxXSoo2BaImwB0yBVlFUrrT26kJIoY59016MSv79FvNQF_lx-sGk/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         //const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -1197,52 +1197,70 @@
 
         async function saveAllSettings() {
             OS.showLoading("Syncing to Cloud...");
-            //Swal.fire({ title: 'Syncing to Cloud...', didOpen: () => { Swal.showLoading(); } });
+
+            // 1. Ambil data Background secara aman
+            const bgRaw = document.getElementById('preview-bg-box').style.backgroundImage;
+            let cleanBgData = null;
+
+            // Logika pembersihan: Buang url("...") agar dapet data:image/... saja
+            if (bgRaw && bgRaw.includes("data:image")) {
+                // Regex ini lebih sakti dari slice, dia buang url( dan tanda petik apapun di ujung
+                cleanBgData = bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+            }
 
             const payload = {
                 action: "UPDATE_PROFILE",
                 uuid: localStorage.getItem("webos_uuid"),
                 username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
                 password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
-                // Kirim Base64 jika src mengandung "data:image" (berarti baru diupload)
-                avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? document.getElementById('preview-avatar').src : null,
-                bgData: document.getElementById('preview-bg-box').style.backgroundImage.includes("data:image") ? 
-                        document.getElementById('preview-bg-box').style.backgroundImage.slice(5, -2) : null
+                
+                // Avatar biasanya pakai tag <img> jadi .src nya sudah bersih
+                avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? 
+                            document.getElementById('preview-avatar').src : null,
+                
+                // Gunakan hasil pembersihan regex di atas
+                bgData: cleanBgData 
             };
 
             try {
+                // Pastikan GAS_URL sudah benar dan tidak ada typo
                 const response = await fetch(GAS_URL, {
                     method: "POST",
+                    // Mode 'no-cors' jangan dipakai di sini karena kita butuh response JSON
                     body: JSON.stringify(payload)
                 });
+
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    // Terapkan perubahan visual secara lokal
+                    // SIMPAN KE LOCAL STORAGE (Agar pas refresh settingan tetap ada)
                     localStorage.setItem("desktopBgColor", document.getElementById('set-bg-color').value);
                     localStorage.setItem("desktopBgMode", document.getElementById('set-bg-mode').value);
-                    // SIMPAN SETTINGAN REGION & WAKTU
                     localStorage.setItem("sysRegion", document.getElementById('set-region').value);
                     localStorage.setItem("sysDateFormat", document.getElementById('set-date-format').value);
                     localStorage.setItem("sysHourFormat", document.getElementById('set-hour-format').value);
+                    
+                    // Simpan juga URL wallpaper baru jika dikirim balik oleh GAS (opsional tapi bagus)
+                    if (result.wallpaper) {
+                        sessionStorage.setItem("userWallpaper", result.wallpaper);
+                    }
+
+                    // Update Tampilan Seketika
                     applyDesktopPreview();
-                    // Jalankan update Monaco seketika
                     updateAllMonacoEditors();
-                    // Refresh jam seketika agar tidak perlu nunggu detik berikutnya
                     updateClock();
-                     // Ambil nilai dari select 'set-win-theme'
+                    
                     const selectedTheme = document.getElementById('set-win-theme').value;
                     applyTheme(selectedTheme);
 
-                    
-                    //Swal.fire("Success!", "Profile and Wallpaper saved to Drive.", "success");
                     OS.notify("Success!", "Profile and Wallpaper saved to Drive.", "success");
-
+                } else {
+                    // Jika statusnya 'error' dari GAS
+                    OS.notify("Server Error", result.msg || "Gagal menyimpan data", "error");
                 }
             } catch (e) {
-                //Swal.fire("Error", "Connection failed!", "error");
-                OS.notify("Error", "Connection failed!", "error");
-
+                console.error("Save Error:", e);
+                OS.notify("Error", "Gagal terhubung ke server (Cek koneksi/GAS Deployment)", "error");
             }
         }
 
