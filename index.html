@@ -1224,20 +1224,35 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const dataUrl = e.target.result;
-                    const target = document.getElementById(targetId);
-                    if (isDiv) {
-                        // Cuma update kotak kecil (preview-bg-box)
-                        target.style.backgroundImage = `url('${dataUrl}')`;
-                    } else {
-                        target.src = dataUrl;
-                    }
+                    const previewBox = document.getElementById(targetId);
                     
-                    // JANGAN PANGGIL applyDesktopPreview() DI SINI!
-                    console.log("Preview gambar terpasang di kotak, menunggu Save...");
+                    // --- LOGIKA INTIP DIMENSI ASLI GAMBAR ---
+                    const img = new Image();
+                    img.src = dataUrl;
+                    img.onload = function() {
+                        // Simpan rasio gambar (Lebar / Tinggi) ke dalam dataset elemen
+                        // Contoh: Gambar Landscape bakal > 1, Potrait bakal < 1
+                        if (previewBox) {
+                            previewBox.dataset.imgRatio = img.width / img.height;
+                        }
+                        
+                        if (isDiv) {
+                            // Update background kotak preview
+                            previewBox.style.backgroundImage = `url('${dataUrl}')`;
+                            // Langsung sinkronkan visual miniatur sesuai mode yang terpilih
+                            updateMiniPreview(); 
+                        } else {
+                            // Jika targetnya elemen <img> (seperti Avatar)
+                            previewBox.src = dataUrl;
+                        }
+                        console.log("Gambar terbaca:", img.width, "x", img.height, "Ratio:", previewBox.dataset.imgRatio);
+                    };
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+
 
 
        function applyDesktopPreview() {
@@ -1513,23 +1528,31 @@
 
             const mode = document.getElementById('set-bg-mode').value;
             const color = document.getElementById('set-bg-color').value;
+            const imgRatio = parseFloat(previewBox.dataset.imgRatio) || 1; // Default 1:1
             
             previewBox.style.backgroundColor = color;
             
             if (mode === "stretch") {
-                previewBox.style.backgroundSize = "100% 100%";
-                previewBox.style.backgroundRepeat = "no-repeat";
+                previewBox.style.backgroundSize = "100% 100%"; // Dipaksa penuh
             } else if (mode === "center") {
-                // Gambar dikecilkan 30% biar kelihatan 'mengambang' di tengah miniatur
-                previewBox.style.backgroundSize = "30%"; 
-                previewBox.style.backgroundRepeat = "no-repeat";
+                // Logika Smart Center: 
+                // Jika gambar lebih lebar dari kotak, lebarnya jadi 40%. 
+                // Jika lebih tinggi, tingginya yang jadi 40%.
+                if (imgRatio > 1) {
+                    previewBox.style.backgroundSize = "40% auto"; 
+                } else {
+                    previewBox.style.backgroundSize = "auto 40%";
+                }
                 previewBox.style.backgroundPosition = "center";
             } else { // Tile
-                // Kotak ubin kecil biar efek pengulangannya kerasa di miniatur
-                previewBox.style.backgroundSize = "20px 20px"; 
+                // Ubin kecil yang tetep proporsional (ngikutin rasio asli gambarnya)
+                const tileW = 25; 
+                const tileH = 25 / imgRatio;
+                previewBox.style.backgroundSize = `${tileW}px ${tileH}px`;
                 previewBox.style.backgroundRepeat = "repeat";
             }
         }
+
 
 
 
