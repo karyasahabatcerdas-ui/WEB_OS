@@ -1047,7 +1047,7 @@
                                         <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
                                             <div>
                                                 <label style="font-size:11px; font-weight:bold; color:#666;">Display Mode:</label>
-                                                <select id="set-bg-mode" onchange="applyDesktopPreview()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
+                                                <select id="set-bg-mode" onchange="updateMiniPreview()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
                                                     <option value="stretch">Stretch (Penuhi Layar)</option>
                                                     <option value="center">Center (Tengah Asli)</option>
                                                     <option value="tile">Tile (Berulang)</option>
@@ -1056,7 +1056,7 @@
                                             <div>
                                                 <label style="font-size:11px; font-weight:bold; color:#666;">Background Color:</label>
                                                 <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
-                                                    <input type="color" id="set-bg-color" value="${currentBgColor}" onchange="applyDesktopPreview()" style="border:none; width:40px; height:35px; cursor:pointer; padding:0; background:none;">
+                                                    <input type="color" id="set-bg-color" value="${currentBgColor}" onchange="updateMiniPreview()" style="border:none; width:40px; height:35px; cursor:pointer; padding:0; background:none;">
                                                     <span style="font-size:11px; color:#888;">Warna di bawah gambar</span>
                                                 </div>
                                             </div>
@@ -1494,6 +1494,28 @@
             
             // 3. Simpan ke localStorage
             localStorage.setItem("sysWinTheme", themeName);
+        }
+
+        function updateMiniPreview() {
+            const previewBox = document.getElementById('preview-bg-box');
+            if (!previewBox) return;
+
+            const mode = document.getElementById('set-bg-mode').value;
+            const color = document.getElementById('set-bg-color').value;
+            
+            // UPDATE HANYA KOTAK KECIL
+            previewBox.style.backgroundColor = color;
+            
+            if (mode === "stretch") {
+                previewBox.style.backgroundSize = "100% 100%";
+                previewBox.style.backgroundRepeat = "no-repeat";
+            } else if (mode === "center") {
+                previewBox.style.backgroundSize = "auto";
+                previewBox.style.backgroundRepeat = "no-repeat";
+            } else { // Tile
+                previewBox.style.backgroundSize = "50%"; // Efek tile di kotak kecil
+                previewBox.style.backgroundRepeat = "repeat";
+            }
         }
 
 
