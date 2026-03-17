@@ -969,7 +969,7 @@
                                     <div style="display:flex; gap:20px; align-items:flex-start;">
                                         <div style="text-align:center;">
                                             <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
-                                                style="width:140px; height:85px; border-radius:10px; background:url('${currentBg}') center/cover, ${currentBgColor}; border:2px solid #ddd; cursor:pointer; position:relative; overflow:hidden;">
+                                                style="width:140px; height:85px; border-radius:10px; background:url('${currentBg}') center/cover ${currentBgColor}; border:2px solid #ddd; cursor:pointer; position:relative; overflow:hidden;">
                                                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; opacity:0; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Ubah Gambar</div>
                                             </div>
                                             <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-bg-box', true)">
