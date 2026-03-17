@@ -63,6 +63,12 @@
     </style>
 </head>
 <body>
+    
+    <!-- HTML Context Menu -->
+    <div id="ctx-item" class="ctx-menu">
+        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
+        <div onclick="deleteItem()" style="color:red"><i class="fas fa-trash"></i> Delete</div>
+    </div>
     <div id="side-pane">
         <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px; padding-left:10px;">DRIVES & FOLDERS</div>
         <div id="root-anchor" class="tree-node" style="margin-left:0;"></div>
@@ -378,12 +384,5 @@
         }
     };
     </script>
-
-    <!-- HTML Context Menu -->
-    <div id="ctx-item" class="ctx-menu">
-        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
-        <div onclick="deleteItem()" style="color:red"><i class="fas fa-trash"></i> Delete</div>
-    </div>
-
 </body>
 </html>
