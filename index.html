@@ -1258,38 +1258,37 @@
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    // SIMPAN KE LOCAL STORAGE (Agar pas refresh settingan tetap ada)
-                    localStorage.setItem("desktopBgColor", document.getElementById('set-bg-color').value);
-                    localStorage.setItem("desktopBgMode", document.getElementById('set-bg-mode').value);
+                    // 1. Ambil nilai input saat ini
+                    const newColor = document.getElementById('set-bg-color').value;
+                    const newMode = document.getElementById('set-bg-mode').value;
+
+                    // 2. SIMPAN KE LOCAL STORAGE (Permanen walau di-refresh)
+                    localStorage.setItem("desktopBgColor", newColor);
+                    localStorage.setItem("desktopBgMode", newMode);
                     localStorage.setItem("sysRegion", document.getElementById('set-region').value);
                     localStorage.setItem("sysDateFormat", document.getElementById('set-date-format').value);
                     localStorage.setItem("sysHourFormat", document.getElementById('set-hour-format').value);
                     
-                // Simpan juga URL wallpaper baru jika dikirim balik oleh GAS (opsional tapi bagus)
-                if (result.newWallpaper) {
-                    sessionStorage.setItem("userWallpaper", result.neWallpaper);
-                }
-
-                // 1. Update Session Storage dengan gambar baru (Base64 atau Link dari GAS)
-
-                    // 2. Update juga foto profil kalau diganti
-                if (result.newAvatar) {
-                    sessionStorage.setItem("userPhoto", result.newAvatar);
-                    if (document.getElementById('user-photo-img')) {
-                        document.getElementById('user-photo-img').src = result.newAvatar;
+                    // 3. Update Wallpaper URL (Gunakan kunci yang konsisten)
+                    if (result.newWallpaper) {
+                        // Simpan ke kedua tempat agar sinkron
+                        localStorage.setItem("desktopBg", result.newWallpaper); 
+                        sessionStorage.setItem("userWallpaper", result.newWallpaper);
+                        
+                        // PENTING: Update preview-bg-box agar tidak lagi pakai Base64 yang berat
+                        const previewBox = document.getElementById('preview-bg-box');
+                        if (previewBox) {
+                            previewBox.style.backgroundImage = `url('${result.newWallpaper}')`;
+                        }
                     }
-                }
-                // Update Tampilan Seketika
-                    applyDesktopPreview();
-                    updateAllMonacoEditors();
-                    updateClock();                    
-                    const selectedTheme = document.getElementById('set-win-theme').value;
-                    applyTheme(selectedTheme);
 
-                    OS.notify("Success!", "Profile and Wallpaper saved to Drive.", "success");
-                } else {
-                    // Jika statusnya 'error' dari GAS
-                    OS.notify("Server Error", result.msg || "Gagal menyimpan data", "error");
+                    // 4. Jalankan Update UI secara berurutan
+                    applyDesktopPreview(); // Sekarang dia baca localStorage yang sudah diupdate
+                    updateAllMonacoEditors();
+                    updateClock();
+                    applyTheme(document.getElementById('set-win-theme').value);
+
+                    OS.notify("Success!", "Semua perubahan tersimpan!", "success");
                 }
             } catch (e) {
                 console.error("Save Error:", e);
