@@ -97,6 +97,53 @@
             background-color: transparent;
         }
 
+        /* ============================================================
+   SINKRONISASI TASKBAR & FORM SETTING (CONTROL PANEL)
+   ============================================================ */
+
+        /* --- TASKBAR --- */
+        .taskbar {
+            background: var(--bg-panel) !important;
+            color: var(--text-main) !important;
+            border-top: 1px solid var(--border);
+            backdrop-filter: blur(15px); /* Efek kaca untuk semua tema */
+            transition: all 0.4s ease;
+        }
+
+        /* --- CONTROL PANEL / WINDOW SYSTEM --- */
+        /* Tambahkan class 'system-form' pada elemen window setting kamu */
+        .window.system-form {
+            background: var(--bg-panel) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            transition: all 0.4s ease;
+        }
+
+        /* Header Jendela Sistem */
+        .system-form .window-header {
+            background: rgba(0,0,0,0.2); /* Sedikit lebih gelap dari panel */
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Tombol dan Input di dalam Form Sistem */
+        .system-form input, 
+        .system-form select, 
+        .system-form button {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 4px;
+        }
+
+        /* Aksen Warna untuk Tombol Utama atau Checkbox */
+        .system-form button.primary, 
+        .system-form input[type="checkbox"]:checked {
+            background-color: var(--accent) !important;
+        }
+
+
 
 
         /*:root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }*/
