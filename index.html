@@ -17,6 +17,10 @@
             --text-main: #f0f0f0; 
             --accent: #007bff; 
             --border: rgba(255,255,255,0.1); 
+            /* Default / Dark */
+            --swal-bg: #1e1e1e;
+            --swal-text: #f0f0f0;
+            --swal-confirm: #007bff;
         }
 
         /* Tema Light */
@@ -25,6 +29,9 @@
             --text-main: #333; 
             --accent: #0056b3; 
             --border: rgba(0,0,0,0.1); 
+            --swal-bg: #ffffff;
+            --swal-text: #333333;
+            --swal-confirm: #0056b3;
         }
 
         /* Tema Blue Dark (Deep Ocean) */
@@ -33,6 +40,10 @@
             --text-main: #64ffda; 
             --accent: #00bcd4; 
             --border: rgba(100, 255, 218, 0.2); 
+            --swal-bg: #0a192f;
+            --swal-text: #64ffda;
+            --swal-confirm: #00bcd4;
+
         }
 
         /* Tema Green Dark (Forest Grey) */
@@ -41,6 +52,31 @@
             --text-main: #a8d5a2; 
             --accent: #2ecc71; 
             --border: rgba(46, 204, 113, 0.2); 
+            --swal-bg: #1a1f1a;
+            --swal-text: #a8d5a2;
+            --swal-confirm: #2ecc71;
+        }
+
+        /* PAKSA SWAL2 MENGIKUTI VARIABEL DI ATAS */
+        .swal2-popup {
+            background: var(--swal-bg) !important;
+            color: var(--swal-text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 15px !important; /* Biar curve sesuai selera lo */
+        }
+
+        .swal2-title, .swal2-html-container {
+            color: var(--swal-text) !important;
+        }
+
+        .swal2-confirm {
+            background-color: var(--swal-confirm) !important;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Pastikan di atas segalanya */
+        .swal2-container {
+            z-index: 999999 !important;
         }
 
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
@@ -201,12 +237,15 @@
                 didOpen: () => { Swal.showLoading(); }
             });
 
+            //OS.showLoading('Memuat Editor...');
+
             const script = document.createElement('script');
             script.src = `${MONACO_BASE}/loader.min.js`;
             
             script.onerror = () => {
                 isMonacoLoading = false;
-                Swal.fire("Gagal!", "Modul Monaco gagal mendarat. Cek koneksi.", "error");
+                //Swal.fire("Gagal!", "Modul Monaco gagal mendarat. Cek koneksi.", "error");
+                OS.notify("Gagal!", "Modul Monaco gagal mendarat. Cek koneksi.", "error");
             };
 
             script.onload = () => {
@@ -256,7 +295,9 @@
             let uuid = localStorage.getItem("webos_uuid") || self.crypto.randomUUID();
             localStorage.setItem("webos_uuid", uuid);
 
-            Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
+            //Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
+            OS.showLoading('Authenticating...');
+
             console.log("habis swal loading");
             const ipField = document.getElementById('ip-addr');
 
@@ -309,11 +350,14 @@
                     initOS();
                 } else {
                     Swal.close();
-                    Swal.fire("Access Denied", result.msg, "error");
+                    //Swal.fire("Access Denied", result.msg, "error");
+                     OS.notify("Access Denied", result.msg, "error");
+                    
                 }
             } catch (e) {
                 Swal.close();
-                Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
+                //Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
+                OS.notify("Error", "Gagal mendeteksi koneksi atau server down", "error");
             }
             Swal.close();
         }
@@ -815,13 +859,15 @@
                 
                 const data = await res.json();
                 if(data.status === "success") {
-                    Swal.fire("Berhasil!", "File disimpan ke Drive.", "success");
+                    //Swal.fire("Berhasil!", "File disimpan ke Drive.", "success");
+                    OS.notify("Berhasil!", "File disimpan ke Drive.", "success");
                     closeWin(winId); // Tutup jendela "Untitled"
                     openEditor(data.id, data.name || newName); // Buka file yang baru dibuat (sudah ada ID-nya)
                 }
             } catch (e) { 
                 console.error(e);
-                Swal.fire("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
+                //Swal.fire("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
+                OS.notify("Gagal", "Terjadi kesalahan saat menyimpan.", "error");
             }
         }
 
@@ -1150,7 +1196,8 @@
         }
 
         async function saveAllSettings() {
-            Swal.fire({ title: 'Syncing to Cloud...', didOpen: () => { Swal.showLoading(); } });
+            OS.showLoading("Syncing to Cloud...");
+            //Swal.fire({ title: 'Syncing to Cloud...', didOpen: () => { Swal.showLoading(); } });
 
             const payload = {
                 action: "UPDATE_PROFILE",
@@ -1188,10 +1235,14 @@
                     applyTheme(selectedTheme);
 
                     
-                    Swal.fire("Success!", "Profile and Wallpaper saved to Drive.", "success");
+                    //Swal.fire("Success!", "Profile and Wallpaper saved to Drive.", "success");
+                    OS.notify("Success!", "Profile and Wallpaper saved to Drive.", "success");
+
                 }
             } catch (e) {
-                Swal.fire("Error", "Connection failed!", "error");
+                //Swal.fire("Error", "Connection failed!", "error");
+                OS.notify("Error", "Connection failed!", "error");
+
             }
         }
 
@@ -1245,6 +1296,57 @@
             localStorage.setItem("sysWinTheme", themeName);
         }
 
+
+       // 3. Cara Pakainya di Kode Lo
+        //Sekarang, setiap kali lo mau nampilin pesan, cukup panggil OS.notify. Contoh:
+        //Ganti alert biasa:
+        //OS.notify("Berhasil", "Profil diperbarui", "success");
+        //Ganti loading:
+        //OS.showLoading("Menyimpan ke Cloud...");
+        //Ganti konfirmasi hapus:
+        //if (await OS.confirm("Hapus File?", "Data tidak bisa balik lagi")) { ...hapus... }
+        const OS = {
+        // Notifikasi Biasa (Success, Error, Warning, Info)
+        notify: function(title, text, icon = 'info') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                heightAuto: false, // Penting agar layout desktop gak rusak
+                confirmButtonColor: 'var(--swal-confirm)',
+                background: 'var(--swal-bg)',
+                color: 'var(--swal-text)',
+                backdrop: `rgba(0,0,0,0.4)`
+            });
+        },
+
+        // Loading / Progress
+        showLoading: function(title = 'Processing...') {
+            Swal.fire({
+                title: title,
+                allowOutsideClick: false,
+                heightAuto: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        },
+
+        // Konfirmasi (Ya/Tidak)
+        confirm: async function(title, text) {
+            const result = await Swal.fire({
+                title: title,
+                text: text,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel',
+                heightAuto: false,
+                confirmButtonColor: 'var(--swal-confirm)',
+            });
+            return result.isConfirmed;
+        }
+    };
 
     </script>
 </body>
