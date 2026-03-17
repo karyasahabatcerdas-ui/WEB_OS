@@ -180,7 +180,7 @@
         }
 
         // Function to retrieve the visitor's IP address
-        async function getVisitorIP(callback) {
+        function getVisitorIP(callback) {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', 'https://api.ipify.org?format=json', true);
                 xhr.onreadystatechange = function() {
@@ -212,7 +212,7 @@
                 //const ipRes = await fetch('https://api.ipify.org');
                 window.clientIP ="" ;
                 
-                await getVisitorIP(function(ip) {
+                getVisitorIP(function(ip) {
                 //document.getElementById('visitor_ip').value = ip;  
                      window.clientIP = ip ;
                  });
