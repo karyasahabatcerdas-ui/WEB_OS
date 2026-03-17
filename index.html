@@ -210,23 +210,41 @@
 
 
         // KRUSIAL: Jalankan ini langsung saat script terbaca agar background muncul instan
+        // Jalankan ini agar background muncul instan TANPA nge-lock CSS
         (function applyImmediateStyles() {
             const bg = localStorage.getItem("desktopBg");
             const color = localStorage.getItem("desktopBgColor") || "#2c3e50";
             const mode = localStorage.getItem("desktopBgMode") || "stretch";
 
-            // Gunakan CSS murni ke elemen body atau #desktop jika sudah ada
-            const style = document.createElement('style');
-            style.innerHTML = `
-                #desktop {
-                    background-color: ${color} !important;
-                    background-image: ${bg ? `url('${bg}')` : 'none'} !important;
-                    background-size: ${mode === 'stretch' ? '100% 100%' : 'auto'} !important;
-                    background-repeat: ${mode === 'tile' ? 'repeat' : 'no-repeat'} !important;
+            // Kita tunggu sebentar sampai elemen #desktop-nya 'lahir' di DOM
+            const checkDesktop = setInterval(() => {
+                const desktop = document.getElementById('desktop');
+                if (desktop) {
+                    clearInterval(checkDesktop);
+                    
+                    // Pasang secara INLINE (Ini kuat, tapi bisa ditimpa JS nanti)
+                    desktop.style.backgroundColor = color;
+                    if (bg && bg !== "undefined") {
+                        desktop.style.backgroundImage = `url('${bg}')`;
+                    }
+                    
+                    // Set Mode
+                    if (mode === "stretch") {
+                        desktop.style.backgroundSize = "100% 100%";
+                        desktop.style.backgroundRepeat = "no-repeat";
+                    } else if (mode === "center") {
+                        desktop.style.backgroundSize = "auto";
+                        desktop.style.backgroundRepeat = "no-repeat";
+                        desktop.style.backgroundPosition = "center";
+                    } else {
+                        desktop.style.backgroundSize = "auto";
+                        desktop.style.backgroundRepeat = "repeat";
+                    }
+                    console.log("Instant background applied via inline style.");
                 }
-            `;
-            document.head.appendChild(style);
+            }, 10); // Cek setiap 10ms (cepet banget)
         })();
+
 
         // menuliskan IP addres ke component DCOM agar siap dulu
         document.addEventListener('DOMContentLoaded', function() {
@@ -1398,7 +1416,7 @@
                     }
 
                     // 4. Jalankan Update UI
-                    applyImmediateStyles();
+                    
                     applyDesktopPreview(); 
                     updateAllMonacoEditors();
                     updateClock();
