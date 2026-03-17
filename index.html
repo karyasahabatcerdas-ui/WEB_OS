@@ -1448,7 +1448,15 @@
 
                     if (result.status === "success") {
                         updateUI(100, "Sinkronisasi Berhasil!");
-                        applyDesktopPreview();
+                            // Tunggu sebentar agar user lihat progress 100%
+                            setTimeout(() => {
+                                // 1. Jalankan fungsi update tampilanmu
+                                applyDesktopPreview();                                 
+                                // 2. Tutup modal/pop-up progress (jika pakai Swal)
+                                Swal.close();                                 
+                                // 3. Opsional: Update element avatar di navbar/taskbar secara manual
+                                document.getElementById('taskbar-avatar').src = avatarImg;
+                            }, 1200);
                         //setTimeout(() => location.reload(), 1200);
                     } else {
                         throw new Error(result.msg);
