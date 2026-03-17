@@ -236,20 +236,25 @@
                 const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
                 console.log("habis dapat browser :", deviceInfo);
             try {
-                // 3. Kirim ke GAS
-                const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
+
+                const payload = {
                         action: "LOGIN",
                         username: user,
                         password: passHash,
                         uuid: uuid,
-                        device: deviceInfo, // Mengirim string info lengkap ke parameter 'device'
-                        wallpaper: wallpaper
-                    })
+                        device: deviceInfo,
+                        wallpaper: (typeof wallpaper !== 'undefined') ? wallpaper : "" // Proteksi jika wallpaper null
+                    };
+                    console.log("Data yang dikirim:", payload);
+                // 3. Kirim ke GAS
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                    
                 });
-                
+                console.log("Response diterima dari server");
                 const result = await response.json();
+                console.log("Hasil JSON:", result);
                 if (result.status === "success") {
                     console.log("habis dapat sukses :", result.status);
                     Swal.close();
@@ -262,14 +267,14 @@
  
                     initOS();
                 } else {
-                    swal.close();
+                    Swal.close();
                     Swal.fire("Access Denied", result.msg, "error");
                 }
             } catch (e) {
-                swal.close();
+                Swal.close();
                 Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
             }
-            swal.close();
+            Swal.close();
         }
 
 
