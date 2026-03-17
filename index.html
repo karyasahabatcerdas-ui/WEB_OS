@@ -73,17 +73,62 @@
 </head>
 <body>
 
-<div id="desktop"></div>
+<body>
 
-<div class="taskbar">
-    <div class="start-btn" onclick="toggleStartMenu()">
-        <i class="fab fa-windows"></i> <span>Start</span>
+    <!-- 1. Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <h2>WEB_OS Login</h2>
+        <form onsubmit="event.preventDefault(); attemptLogin();" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <input type="text" id="login-user" placeholder="Username" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
+            <input type="password" id="login-pass" placeholder="Password" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
+            <label id="ip-addr" style="font:size 8px; color:rgb(66, 2, 2) ; padding:5px; border:none; text-align: center; display: inline-block;">IP: xxx.xxx.xxx.xxx </label>
+            <button type="submit" style="margin-top:15px; padding:8px 30px; border-radius:20px; border:none; background:var(--accent); color:white; cursor:pointer;">Unlock</button>       
+        </form>
     </div>
-    <div id="taskbar-apps" style="display:flex; flex:1; gap:10px; padding:0 15px;"></div>
-    <div id="tray-area" style="padding-right:20px; font-size:13px; font-weight:500;">
-        <span id="os-clock">00:00</span>
+
+
+    <!-- 2. Desktop Area (Cukup SATU saja) -->
+    <div id="desktop" style="width: 100vw; height: calc(100vh - 50px); position: relative; background: url('https://images.unsplash.com') center/cover;" oncontextmenu="showDesktopCtx(event)">
+        
+        <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
+        <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
+            <div class="menu-user-header" onclick="openQuickSettings(); toggleStartMenu()" style="display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:10px; cursor:pointer; border-radius:8px; transition:0.2s;">
+                <!-- Tambahkan ID: user-photo-img -->
+                <img id="user-photo-img" src="" style="width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #ddd;">
+                
+                <div style="display:flex; flex-direction:column;">
+                    <!-- Tambahkan ID: user-name-span -->
+                    <span id="user-name-span" style="font-weight:bold; font-size:14px; color:#333;">User</span>
+                    <span style="font-size:11px; color:#888;">System Settings</span>
+                </div>
+            </div>
+            <hr style="border:0; border-top:1px solid #eee; margin-bottom:10px;">
+            <div class="menu-item" onclick="openEditor('', 'Untitled.js'); toggleStartMenu()"> <i class="fas fa-file-code"></i> Text Editor  </div>
+            <hr>
+            <div class="menu-item" onclick="createNewExplorer(); toggleStartMenu()"><i class="fas fa-folder"></i> File Explorer</div>
+            <div class="menu-item" onclick="openTerminal(); toggleStartMenu()"><i class="fas fa-terminal"></i> Terminal</div>
+            <div class="menu-item" onclick="openQuickSettings(); toggleStartMenu()"><i class="fas fa-cog"></i> Settings</div>
+            <hr>
+            <div class="menu-item" onclick="saveCloudSession(); toggleStartMenu()"><i class="fas fa-cloud-upload-alt"></i> Hibernate</div>
+            <div class="menu-item" onclick="location.reload()" style="color:red;"><i class="fas fa-power-off"></i> Power Off</div>
+        </div>
+
+        <!-- Desktop Context Menu -->
+        <div id="ctx-desktop" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px;">
+            <div class="menu-item" onclick="createNewExplorer()"><i class="fas fa-folder-plus"></i> New Explorer</div>
+            <div class="menu-item" onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
+        </div>
+
     </div>
-</div>
+
+    <!-- 3. Taskbar (Di luar desktop area) -->
+    <div class="taskbar">
+        <div class="start-btn" onclick="event.stopPropagation(); toggleStartMenu()">
+            <i class="fab fa-windows"></i> Start
+        </div>
+        <div id="taskbar-apps" style="display:flex; flex:1; gap:10px; padding:0 15px;"></div>
+        <div id="clock" onclick="openQuickSettings()" style="padding-right:20px; cursor:pointer; font-weight:bold; color:var(--text-main);">00:00</div>
+    </div>
 
 <script>
 /* ============================================================
