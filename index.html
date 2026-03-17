@@ -180,7 +180,7 @@
         }
 
         // Function to retrieve the visitor's IP address
-        function getVisitorIP(callback) {
+        async function getVisitorIP(callback) {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', 'https://api.ipify.org?format=json', true);
                 xhr.onreadystatechange = function() {
@@ -193,9 +193,9 @@
             }
 
         // Populate the hidden field with the visitor's IP address
-            getVisitorIP(function(ip) {
-                document.getElementById('visitor_ip').value = ip;
-            });
+           // getVisitorIP(function(ip) {
+               // document.getElementById('visitor_ip').value = ip;
+           // });
 
         async function attemptLogin() {
             const user = document.getElementById('login-user').value;
@@ -207,12 +207,12 @@
 
             Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
             console.log("habis swal loading");
-            try {
+           
                 // 1. Ambil IP Publik dari API Eksternal
                 //const ipRes = await fetch('https://api.ipify.org');
                 window.clientIP ="" ;
                 
-                getVisitorIP(function(ip) {
+                await getVisitorIP(function(ip) {
                 //document.getElementById('visitor_ip').value = ip;  
                      window.clientIP = ip ;
             });
@@ -231,6 +231,7 @@
 
                 const deviceInfo = `${deviceType} (${ua}) - IP: ${window.clientIP}`;
                 //console.log("habis dapat browser :", deviceInfo);
+            try {
                 // 3. Kirim ke GAS
                 const response = await fetch(GAS_URL, {
                     method: "POST",
@@ -246,7 +247,7 @@
                 
                 const result = await response.json();
                 if (result.status === "success") {
-                    //console.log("habis dapat sukses :", result.status);
+                    console.log("habis dapat sukses :", result.status);
                     Swal.close();
                     document.getElementById('login-screen').style.display = 'none';
 
