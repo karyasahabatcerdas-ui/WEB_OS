@@ -1448,7 +1448,8 @@
 
                     if (result.status === "success") {
                         updateUI(100, "Sinkronisasi Berhasil!");
-                        setTimeout(() => location.reload(), 1200);
+                        applyDesktopPreview();
+                        //setTimeout(() => location.reload(), 1200);
                     } else {
                         throw new Error(result.msg);
                     }
