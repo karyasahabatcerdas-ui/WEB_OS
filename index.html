@@ -83,65 +83,70 @@
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
         .taskbar { background: var(--bg-panel); color: var(--text-main); border-top: 1px solid var(--border); }
         .taskbar { height: 50px; backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000;}
+
+
         .win-header { background: var(--bg-panel); color: var(--text-main); border-bottom: 1px solid var(--border); }
         .win-header { padding: 10px 15px; cursor: move; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .sub-window { background: var(--bg-panel); border: 1px solid var(--border); }
         .sub-window { position: absolute; width: 600px; height: 400px; backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; } 
         .sub-window {
             min-width: 300px;
-            min-height: 200px;
-        }
+            min-height: 200px;        }
 
         /* Sembunyikan scrollbar bawaan browser saat resize jika perlu */
         .sub-window::-webkit-resizer {
             background-color: transparent;
         }
 
-        /* ============================================================
-   SINKRONISASI TASKBAR & FORM SETTING (CONTROL PANEL)
-   ============================================================ */
-
-        /* --- TASKBAR --- */
-        .taskbar {
-            background: var(--bg-panel) !important;
+        /* Update di bagian CSS .win-body kamu */
+        
+        /*.win-body { flex: 1; overflow: hidden; background: white; } */
+        .win-body { 
+            flex: 1; 
+            overflow: hidden; 
+            /* Ganti 'white' dengan variabel tema */
+            background: var(--bg-panel) !important; 
             color: var(--text-main) !important;
-            border-top: 1px solid var(--border);
-            backdrop-filter: blur(15px); /* Efek kaca untuk semua tema */
-            transition: all 0.4s ease;
+        }
+        /*
+        .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }*/
+
+        /* Style Dasar (Sudah ada di kodemu) */
+        .win-controls button { 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            padding: 5px; 
+            color: var(--text-main); 
+            transition: background 0.2s, color 0.2s; /* Tambahkan transisi biar halus */
         }
 
-        /* --- CONTROL PANEL / WINDOW SYSTEM --- */
-        /* Tambahkan class 'system-form' pada elemen window setting kamu */
-        .window.system-form {
-            background: var(--bg-panel) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-            transition: all 0.4s ease;
+        /* Efek Hover Umum */
+        .win-controls button:hover { 
+            background: rgba(255, 255, 255, 0.1); 
         }
 
-        /* Header Jendela Sistem */
-        .system-form .window-header {
-            background: rgba(0,0,0,0.2); /* Sedikit lebih gelap dari panel */
-            border-bottom: 1px solid var(--border);
+        /* Khusus Tombol Close (Biasanya Merah saat Hover) */
+        .win-controls button.close-btn:hover { 
+            background: #e81123 !important; 
+            color: white !important; 
         }
 
-        /* Tombol dan Input di dalam Form Sistem */
-        .system-form input, 
-        .system-form select, 
-        .system-form button {
-            background: rgba(255, 255, 255, 0.05) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 4px;
+        /* Penyesuaian Hover berdasarkan Tema di body */
+        body.theme-light .win-controls button:hover { 
+            background: rgba(0, 0, 0, 0.1); 
         }
 
-        /* Aksen Warna untuk Tombol Utama atau Checkbox */
-        .system-form button.primary, 
-        .system-form input[type="checkbox"]:checked {
-            background-color: var(--accent) !important;
+        body.theme-bluedark .win-controls button:hover { 
+            background: var(--accent); /* Warna Cyan transparan */
+            color: #fff;
         }
+
+        body.theme-greendark .win-controls button:hover { 
+            background: var(--accent); /* Warna Hijau transparan */
+            color: #fff;
+        }
+
 
 
 
@@ -153,14 +158,14 @@
         #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }      
 
         .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
-        .start-btn:hover { background: rgba(0,0,0,0.1); }
 
-        .win-body { flex: 1; overflow: hidden; background: white; }        
-        .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }
+        .start-btn:hover { background: rgba(0,0,0,0.1); }
+       
+        
 
         .login-screen { position: fixed; inset: 0; background: #051b5a; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
         
-        #start-menu { position: absolute; bottom: 55px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px; }
+
 
         .menu-item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-radius: 8px; color: #333; }
         .menu-item:hover { background: #f0f0f0; color: var(--accent); }
@@ -201,7 +206,7 @@
     <div id="desktop" style="width: 100vw; height: calc(100vh - 50px); position: relative; background: url('https://images.unsplash.com') center/cover;" oncontextmenu="showDesktopCtx(event)">
         
         <!-- Start Menu (Pindah ke dalam desktop agar z-index aman) -->
-        <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
+        <div id="start-menu" style="position: absolute; bottom: 5px; left: 10px; width: 280px; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px;">
             <div class="menu-user-header" onclick="openQuickSettings(); toggleStartMenu()" style="display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:10px; cursor:pointer; border-radius:8px; transition:0.2s;">
                 <!-- Tambahkan ID: user-photo-img -->
                 <img id="user-photo-img" src="" style="width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #ddd;">
