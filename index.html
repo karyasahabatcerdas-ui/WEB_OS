@@ -1031,14 +1031,22 @@
 
                                            <!-- Di dalam winHtml, cari div preview-bg-box -->
                                             <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
-                                                style="width:140px; height:85px; border-radius:10px; 
+                                                style="width:200px; height:112px; border-radius:8px; 
                                                     background-color: ${currentBgColor}; 
-                                                    background-image: ${currentBg && currentBg !== "undefined" ? `url('${currentBg}')` : 'none'};
+                                                    background-image: ${currentBg && currentBg !== 'undefined' ? `url('${currentBg}')` : 'none'};
+                                                    /* --- INI KUNCINYA --- */
+                                                    background-position: center;
+                                                    background-repeat: no-repeat;
                                                     background-size: cover; 
-                                                    background-position: center; 
-                                                    border:2px solid #ddd; cursor:pointer; position:relative; overflow:hidden;">
+                                                    border:2px solid #555; cursor:pointer; position:relative; overflow:hidden;
+                                                    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                                
+                                                <!-- Simulasi Taskbar Kecil di dalam Preview (Biar makin mirip Desktop) -->
+                                                <div style="position:absolute; bottom:0; width:100%; height:8px; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);"></div>
+                                                
                                                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; color:white; font-size:10px; opacity:0; transition:0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Ubah Gambar</div>
                                             </div>
+
 
                                             <input type="file" id="bg-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-bg-box', true)">
                                             <button onclick="clearDesktopImg()" style="margin-top:8px; border:none; background:none; color:#e74c3c; cursor:pointer; font-size:11px; font-weight:bold;"><i class="fas fa-eraser"></i> Hapus Gambar</button>
@@ -1503,20 +1511,25 @@
             const mode = document.getElementById('set-bg-mode').value;
             const color = document.getElementById('set-bg-color').value;
             
-            // UPDATE HANYA KOTAK KECIL
+            // 1. Warna latar miniatur
             previewBox.style.backgroundColor = color;
             
+            // 2. Logika Miniatur (Representasi Desktop)
             if (mode === "stretch") {
                 previewBox.style.backgroundSize = "100% 100%";
                 previewBox.style.backgroundRepeat = "no-repeat";
+                previewBox.style.backgroundPosition = "center";
             } else if (mode === "center") {
-                previewBox.style.backgroundSize = "auto";
+                previewBox.style.backgroundSize = "40%"; // Di miniatur, gambar dikecilin biar keliatan 'tengah'
                 previewBox.style.backgroundRepeat = "no-repeat";
+                previewBox.style.backgroundPosition = "center";
             } else { // Tile
-                previewBox.style.backgroundSize = "50%"; // Efek tile di kotak kecil
+                previewBox.style.backgroundSize = "30px 30px"; // Ukuran kotak ubin di miniatur
                 previewBox.style.backgroundRepeat = "repeat";
+                previewBox.style.backgroundPosition = "top left";
             }
         }
+
 
 
        // 3. Cara Pakainya di Kode Lo
