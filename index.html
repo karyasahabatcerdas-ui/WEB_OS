@@ -1103,7 +1103,7 @@
                                         <select id="set-date-format" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
                                             <option value="dd/MM/yyyy">DD/MM/YYYY (31/12/2024)</option>
                                             <option value="MM/dd/yyyy">MM/DD/YYYY (12/31/2024)</option>
-                                            <option value="dddd, MMMM yyyy">Full Date (Selasa, Maret 2024)</option>
+                                            <option value="dddd, dd MMMM yyyy">Full Date (Selasa, 21 Maret 2024)</option>
                                         </select>
                                     </div>
                                     <div>
@@ -1336,22 +1336,32 @@
             const clockEl = document.getElementById('clock');
             if (!clockEl) return;
 
-            // Ambil setting dari localStorage (Default: Indo, 24h)
             const region = localStorage.getItem("sysRegion") || "id-ID";
             const hour12 = localStorage.getItem("sysHourFormat") === "12h";
             const dateFormat = localStorage.getItem("sysDateFormat") || "dd/MM/yyyy";
 
             const now = new Date();
 
-            // 1. Format Jam
-            const timeStr = now.toLocaleTimeString(region, { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit', 
-                hour12: hour12 
-            });
+            // 1. Ambil Komponen Jam secara terpisah agar bisa dimanipulasi
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Logika Berkedip: Munculkan titik dua jika detik genap, transparan jika ganjil
+            const blink = now.getSeconds() % 2 === 0 ? ":" : "<span style='opacity:0;'>:</span>";
+            
+            // Gabungkan Jam (Format 24 jam atau 12 jam)
+            let displayHours = hours;
+            let ampm = "";
+            if (hour12) {
+                const h = now.getHours();
+                ampm = h >= 12 ? " PM" : " AM";
+                displayHours = String(h % 12 || 12).padStart(2, '0');
+            }
 
-            // 2. Format Tanggal (Sesuai pilihan user)
+            const timeStr = `${displayHours}${blink}${minutes}${blink}${seconds}${ampm}`;
+
+            // 2. Format Tanggal (Tetap sama)
             const day = String(now.getDate()).padStart(2, '0');
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const year = now.getFullYear();
@@ -1365,9 +1375,14 @@
                 .replace("MM", month)
                 .replace("yyyy", year);
 
-            // Tampilkan (Jam di atas, Tanggal kecil di bawahnya atau sejajar)
-            clockEl.innerHTML = `<div style="text-align:right;">${timeStr}<br><span style="font-size:10px; font-weight:normal;">${dateStr}</span></div>`;
+            // Tampilkan dengan style agar rata kanan
+            clockEl.innerHTML = `
+                <div style="text-align:right; line-height:1.2;">
+                    <span style="font-family: monospace; font-size: 14px;">${timeStr}</span><br>
+                    <span style="font-size:10px; font-weight:normal; opacity:0.8;">${dateStr}</span>
+                </div>`;
         }
+
 
         function applyTheme(themeName) {
             // 1. Hapus semua class theme lama di body
