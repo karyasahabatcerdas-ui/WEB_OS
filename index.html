@@ -1136,14 +1136,28 @@
 
             // Paksa preview box update visualnya sesuai mode
             // Setelah insertAdjacentHTML...
+            const settingsMap = {
+                'set-bg-mode': 'desktopBgMode',
+                'set-win-theme': 'sysWinTheme',
+                'set-monaco-theme': 'sysMonacoTheme',
+                'set-monaco-font': 'sysMonacoFont',
+                'set-region': 'sysRegion',
+                'set-date-format': 'sysDateFormat',
+                'set-hour-format': 'sysHourFormat'
+            };
+
+            // Kita kasih jeda dikit biar browser selesai ngerender elemennya
             setTimeout(() => {
-                const savedMode = localStorage.getItem("desktopBgMode") || "stretch";
-                const modeDropdown = document.getElementById('set-bg-mode');
-                if (modeDropdown) {
-                    modeDropdown.value = savedMode; // Paksa dropdown pilih mode lama
+                for (const [id, storageKey] of Object.entries(settingsMap)) {
+                    const el = document.getElementById(id);
+                    const savedValue = localStorage.getItem(storageKey);
+                    if (el && savedValue) {
+                        el.value = savedValue;
+                    }
                 }
-                applyDesktopPreview(); // Jalankan preview agar sinkron
-            }, 100);
+                // Jalankan preview biar visualnya langsung sinkron
+                applyDesktopPreview();
+            }, 50); 
 
             //applyDesktopPreview();
         }
