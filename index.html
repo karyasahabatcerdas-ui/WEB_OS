@@ -469,6 +469,7 @@
                 </div>`;
             document.getElementById('desktop').insertAdjacentHTML('beforeend', winHtml);
             addToTaskbar(winId, appId, title);
+            
         }
         
         async function saveFileContent(winId, fileId) {
@@ -1134,7 +1135,17 @@
             if(modeSelect) modeSelect.value = savedMode;
 
             // Paksa preview box update visualnya sesuai mode
-            applyDesktopPreview();
+            // Setelah insertAdjacentHTML...
+            setTimeout(() => {
+                const savedMode = localStorage.getItem("desktopBgMode") || "stretch";
+                const modeDropdown = document.getElementById('set-bg-mode');
+                if (modeDropdown) {
+                    modeDropdown.value = savedMode; // Paksa dropdown pilih mode lama
+                }
+                applyDesktopPreview(); // Jalankan preview agar sinkron
+            }, 100);
+
+            //applyDesktopPreview();
         }
 
         /* --- LOGIKA PENDUKUNG (Tulis di Luar Fungsi openQuickSettings) --- */
