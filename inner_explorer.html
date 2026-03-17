@@ -5,46 +5,42 @@
     <!-- FontAwesome untuk Icon -->
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com"> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.css" integrity="sha512-Ivy7sPrd6LPp20adiK3al16GBelPtqswhJnyXuha3kGtmQ1G2qWpjuipfVDaZUwH26b3RDe8x707asEpvxl7iA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js" integrity="sha512-pnPZhx5S+z5FSVwy62gcyG2Mun8h6R+PG01MidzU+NGF06/ytcm2r6+AaWMBXAnDHsdHWtsxS0dH8FBKA84FlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    
     <style>
-        :root { --accent: #0078d7; --bg-side: #f8f9fa; --text: #333; }
-        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; background: #fff; overflow: hidden; color: var(--text); }
+        :root { --accent: #007bff; --border: #eee; --bg-side: #f8f9fa; --text: #333; }
+        body { display: flex; height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; overflow: hidden; color: var(--text); }
         
         /* SIDEBAR (TREE VIEW) */
-        #side-pane { width: 250px; border-right: 1px solid #ddd; background: var(--bg-side); padding: 10px; overflow-y: auto; flex-shrink: 0; }
-        .tree-node { margin-left: 12px; }
-        .tree-row { display: flex; align-items: center; padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; gap: 8px; transition: 0.1s; }
-        .tree-row:hover { background: rgba(0,120,215,0.1); }
+        #side-pane { width: 260px; border-right: 1px solid #ddd; background: var(--bg-side); padding: 10px; overflow-y: auto; flex-shrink: 0; }
+        .tree-node { display: flex; flex-direction: column; margin-left: 12px; }
+        .tree-row { display: flex; align-items: center; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; gap: 6px; white-space: nowrap; transition: 0.1s; }
+        .tree-row:hover { background: rgba(0,123,255,0.1); }
         .tree-row.active { background: var(--accent); color: white; font-weight: bold; }
-        .expander { width: 14px; text-align: center; font-size: 10px; cursor: pointer; }
+        .expander { width: 14px; text-align: center; font-size: 10px; cursor: pointer; transition: transform 0.2s; }
+        .expander.open { transform: rotate(90deg); }
         .sub-tree { display: none; border-left: 1px solid #ddd; margin-left: 6px; }
         .sub-tree.show { display: block; }
 
-        /* MAIN CONTENT */
+        /* MAIN CONTENT (DETAILS VIEW) */
         #main-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .toolbar { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fff; border-bottom: 1px solid #eee; }
+        
+        /* Toolbar 2 Baris */
+        .toolbar { display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fdfdfd; border-bottom: 1px solid #eee; }
         .nav-group { display: flex; gap: 5px; }
-        .nav-btn { border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 5px 10px; font-size: 12px; }
-        .nav-btn:hover { background: #f0f0f0; }
+        .nav-btn { border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 4px 8px; }
+        #filter-input { width: 100%; padding: 6px 10px 6px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 12px; outline: none; }
+        #path-input { flex: 1; border: none; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace; }
         
-        #path-input { flex: 1; border: 1px solid #eee; background: #f9f9f9; padding: 5px 10px; border-radius: 4px; font-size: 11px; color: #666; font-family: monospace; outline: none; }
-        
-        /* FILE LIST TABLE */
-        .list-header, .file-row { display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; font-size: 13px; border-bottom: 1px solid #f5f5f5; align-items: center; }
-        .list-header { font-weight: bold; background: #fafafa; color: #666; position: sticky; top: 0; }
+        .list-header, .file-row { display: grid; grid-template-columns: 2.5fr 1fr 1fr; padding: 10px 15px; font-size: 13px; align-items: center; border-bottom: 1px solid #f5f5f5; }
+        .list-header { font-weight: bold; background: #fafafa; position: sticky; top: 0; z-index: 5; color: #666; }
         .file-row:hover { background: #f0f7ff; cursor: pointer; }
         .file-row i { font-size: 16px; margin-right: 10px; color: #f39c12; }
-        .file-row.file i { color: #999; }
-
-        /* CONTEXT MENU */
-        .ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 1000; min-width: 160px; border-radius: 5px; padding: 5px 0; }
-        .ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        
+        /* CONTEXT MENUS */
+        .ctx-menu { position: fixed; background: white; border: 1px solid #ccc; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); display: none; z-index: 1000; min-width: 150px; border-radius: 5px; padding: 5px 0; }
+        .ctx-menu div { padding: 8px 15px; font-size: 13px; cursor: pointer; }
         .ctx-menu div:hover { background: var(--accent); color: white; }
-
-        /* DRAG & DROP ZONE */
-        #drop-zone { position: fixed; inset: 0; background: rgba(0,120,215,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 10000; pointer-events: none; color: var(--accent); font-weight: bold; font-size: 1.5rem; }
+        
+        #drop-zone { position: fixed; inset: 0; background: rgba(0,123,255,0.1); border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; color: var(--accent); font-weight: bold; }
 
         #resizer:hover {
             background: var(--accent) !important; /* Berubah warna saat di-hover */
@@ -57,332 +53,241 @@
             user-select: none;
         }
 
-        /* PROGRESS BAR CUSTOM */
-        .swal-progress-container { width: 100%; height: 15px; background: #eee; border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        #swal-bar { width: 0%; height: 100%; background: var(--accent); transition: 0.3s; }
     </style>
 </head>
 <body>
-    
-    <!-- HTML Context Menu -->
-    <div id="ctx-item" class="ctx-menu">
-        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
-        <div onclick="deleteItem()" style="color:red"><i class="fas fa-trash"></i> Delete</div>
-    </div>
+
     <div id="side-pane">
-        <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px; padding-left:10px;">DRIVES & FOLDERS</div>
+        <div style="font-weight:bold; font-size:11px; color:#888; margin-bottom:10px;">DRIVES & FOLDERS</div>
         <div id="root-anchor" class="tree-node" style="margin-left:0;"></div>
     </div>
-    
+    <!-- TAMBAHKAN BARIS INI: Bar Pemisah -->
+    <div id="resizer" style="width: 4px; cursor: col-resize; background: #ddd; height: 100vh; transition: 0.2s;"></div>
+
     <div id="main-container">
         <div class="toolbar">
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div class="nav-group">
-                    <button class="nav-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+                    <button class="nav-btn" onclick="loadData(lastParentId)"><i class="fas fa-arrow-left"></i></button>
                     <button class="nav-btn" onclick="loadData()"><i class="fas fa-sync"></i></button>
                 </div>
-                <input type="text" id="path-input" readonly value="Root / Home">
-                <button class="nav-btn" onclick="triggerUpload()"><i class="fas fa-upload"></i> Upload</button>
+                <div style="flex: 1; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 10px; top: 8px; color: #888; font-size: 12px;"></i>
+                    <input type="text" id="filter-input" placeholder="Cari file..." onkeyup="filterList()">
+                </div>
+                <span id="status" style="font-size:10px; color:gray;">Ready</span>
             </div>
-            <input type="text" id="filter-input" placeholder="Cari file di folder ini..." onkeyup="filterList()" style="width:100%; padding:6px 12px; border:1px solid #ddd; border-radius:20px; font-size:12px; outline:none;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 10px; font-weight: bold; color: #999;">PATH:</span>
+                <input type="text" id="path-input" readonly>
+            </div>
         </div>
-        
         <div class="list-header"><div>Name</div><div>Type</div><div>Size</div></div>
         <div id="file-list" style="overflow-y:auto; flex:1;"></div>
     </div>
 
-    <div id="drop-zone">Seret File ke Sini untuk Upload</div>
+    <div id="drop-zone">Drop to Upload</div>
+
+    <!-- Menus -->
+    <div id="ctx-item" class="ctx-menu">
+        <div onclick="parent.openEditor(selectedId, selectedName)"><i class="fas fa-code"></i> Edit Code</div>
+        <div onclick="renameItem()"><i class="fas fa-edit"></i> Rename</div>
+        <div onclick="deleteItem()" style="color:red"><i class="fas fa-trash"></i> Delete</div>
+    </div>
+    <div id="ctx-empty" class="ctx-menu">
+        <div onclick="createNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</div>
+        <div onclick="createNewFile()"><i class="fas fa-file-plus"></i> New Text File</div>
+        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+        <div onclick="loadData()">Refresh</div>
+    </div>
+    <div id="ctx-sidebar" class="ctx-menu">
+        <div onclick="unpinRoot()" style="color:red">Unpin Drive</div>
+    </div>
 
     <script>
-    // 1. CONFIGURATION (Gunakan URL GAS yang sama dengan index.html)
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx2iUTl3jKJQ2uJ5huTjUUz230IIV16Jnvy1qlD5oWCxOrmoYJ7tTVnXkSu96V_bGjt/exec";
-    const ID_ROOT = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
-    
-    let activeFolderId = ID_ROOT;
-    let pathStack = [{ id: ID_ROOT, name: "Home" }];
-    let loadedNodes = {};
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzJfGh-7jPKpmAg66DIS74c8hob2ULUSemB5JlLAl6LIy2TAlCbmcnh838PR9vMQ7Fl/exec";
+        const ID_FDD = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
+        const params = new URLSearchParams(window.location.search);
 
-    // 2. UNIVERSAL SMART FETCH (Sama seperti di Index, untuk konsistensi)
-    async function smartFetch(payload, targetData = null) {
-        const uuid = localStorage.getItem("webos_uuid");
-        const streamId = Date.now();
-        const chunkSize = 50000; 
-
-        if (!targetData || targetData.length <= chunkSize) {
-            const response = await fetch(GAS_URL, { 
-                method: "POST", 
-                body: JSON.stringify({ ...payload, uuid, fullData: targetData }) 
-            });
-            return await response.json();
-        }
-
-        const totalChunks = Math.ceil(targetData.length / chunkSize);
-        let finalResult = null;
-
-        Swal.fire({
-            title: 'Uploading File...',
-            html: `<div id="swal-status" style="font-size:12px;">Menyiapkan...</div>
-                   <div class="swal-progress-container"><div id="swal-bar"></div></div>
-                   <div id="swal-percent" style="font-weight:bold; margin-top:5px;">0%</div>`,
-            showConfirmButton: false, allowOutsideClick: false
-        });
-
-        for (let i = 0; i < totalChunks; i++) {
-            const chunk = targetData.slice(i * chunkSize, (i + 1) * chunkSize);
-            const chunkPayload = { ...payload, isChunk: true, isFinal: (i === totalChunks - 1), streamId, uuid, chunk };
-            
-            const response = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(chunkPayload) });
-            finalResult = await response.json();
-
-            const percent = Math.round(((i + 1) / totalChunks) * 100);
-            if (document.getElementById('swal-bar')) document.getElementById('swal-bar').style.width = percent + "%";
-            if (document.getElementById('swal-percent')) document.getElementById('swal-percent').innerText = percent + "%";
-            if (document.getElementById('swal-status')) document.getElementById('swal-status').innerText = `Mengirim part ${i+1}/${totalChunks}...`;
-        }
-        Swal.close();
-        return finalResult;
-    }
-    // 3. FUNGSI NAVIGASI (TREE VIEW)
-    async function initTree() {
-        const anchor = document.getElementById('root-anchor');
-        if (anchor) {
-            anchor.innerHTML = createTreeNode(ID_ROOT, "Home", true, 0);
-            const firstRow = anchor.querySelector('.tree-row');
-            if (firstRow) await toggleFolder(ID_ROOT, "Home", firstRow, 0);
-        }
-    }
-
-    function createTreeNode(id, name, isRoot = false, depth = 0) {
-        const activeClass = (id === activeFolderId) ? 'active' : '';
-        const iconClass = isRoot ? 'fa-home' : 'fa-folder';
-        return `
-            <div class="tree-node" id="node-${id}">
-                <div class="tree-row ${activeClass}" onclick="toggleFolder('${id}', '${name}', this, ${depth})" data-depth="${depth}">
-                    <span class="expander"><i class="fas fa-caret-right"></i></span>
-                    <i class="fas ${iconClass}"></i><span>${name}</span>
-                </div>
-                <div class="sub-tree" id="sub-${id}"></div>
-            </div>`;
-    }
-
-    async function toggleFolder(id, name, element, depth) {
-        const subTree = document.getElementById(`sub-${id}`);
-        const expander = element.querySelector('.expander');
+        let activeFolderId = params.get('folderId') || ID_FDD; 
+        let currentFolderName = params.get('pName') || "Home Root";
+        let externalRoots = []; 
+        let lastParentId = ""; 
+        let loadedNodes = {}; 
+        let pathStack = []; 
+        let selectedId = null, selectedName = "";
         
-        activeFolderId = id;
-        document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
-        element.classList.add('active');
-
-        // Update Path Bar
-        pathStack = pathStack.slice(0, depth);
-        pathStack.push({ id, name });
-        document.getElementById('path-input').value = pathStack.map(i => i.name).join(' / ');
-
-        if (!loadedNodes[id]) {
-            if (expander) expander.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-            const data = await res.json();
-            
-            subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name, false, depth + 1)).join('');
-            loadedNodes[id] = true;
-            renderMainContent(data);
-            if (expander) {
-                expander.innerHTML = '<i class="fas fa-caret-down"></i>';
-                subTree.classList.add('show');
+        
+        async function init() {
+            const rootId = activeFolderId; 
+            const anchor = document.getElementById('root-anchor');
+            pathStack = []; 
+            if (anchor) {
+                anchor.innerHTML = createTreeNode(rootId, "Home Root", true, 0);
+                const firstRow = anchor.querySelector('.tree-row');
+                if (firstRow) await toggleFolder(rootId, "Home Root", firstRow, 0);
             }
-        } else {
-            subTree.classList.toggle('show');
-            const isShowing = subTree.classList.contains('show');
-            if (expander) expander.innerHTML = isShowing ? '<i class="fas fa-caret-down"></i>' : '<i class="fas fa-caret-right"></i>';
-            await loadData(id);
         }
-    }
 
-    // 4. RENDER DAFTAR FILE & FOLDER (AREA UTAMA)
-    async function loadData(id = activeFolderId) {
-        try {
-            const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
-            const data = await res.json();
-            renderMainContent(data);
-        } catch (e) { console.error("Gagal memuat data:", e); }
-    }
-
-    function renderMainContent(data) {
-        const list = document.getElementById('file-list');
-        list.innerHTML = "";
-        
-        // Render Folders
-        data.folders.forEach(f => {
-            list.innerHTML += `
-                <div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')">
-                    <div><i class="fas fa-folder"></i> ${f.name}</div>
-                    <div>Folder</div><div>--</div>
+        function createTreeNode(id, name, isRoot = false, depth = 0) {
+            const activeClass = (id === activeFolderId) ? 'active' : '';
+            const iconClass = isRoot ? 'fa-home' : 'fa-folder';
+            return `
+                <div class="tree-node" id="node-${id}">
+                    <div class="tree-row ${activeClass}" onclick="toggleFolder('${id}', '${name}', this, ${depth})" oncontextmenu="showSidebarCtx(event, '${id}', '${name}')" data-depth="${depth}">
+                        <span class="expander">▶</span><i class="fas ${iconClass}"></i><span>${name}</span>
+                    </div>
+                    <div class="sub-tree" id="sub-${id}"></div>
                 </div>`;
-        });
+        }
 
-        // Render Files
-        data.files.forEach(f => {
-            const ext = f.name.split('.').pop().toUpperCase();
-            list.innerHTML += `
-                <div class="file-row file" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')">
-                    <div><i class="fas fa-file-alt"></i> ${f.name}</div>
-                    <div>${ext}</div><div>${(f.size / 1024).toFixed(1)} KB</div>
-                </div>`;
-        });
-    }
-    /* ============================================================
-       5. UPLOAD ENGINE (DRAG & DROP + CHUNKING)
-       ============================================================ */
-
-    // Trigger input file manual
-    function triggerUpload() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.onchange = (e) => handleFileUpload(e.target.files[0]);
-        input.click();
-    }
-
-    // Handler Utama Upload
-    async function handleFileUpload(file) {
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64Data = e.target.result.split(',')[1];
-            const payload = {
-                action: "UPSERT_FILE",
-                name: file.name,
-                mimeType: file.type,
-                folderId: activeFolderId,
-                uuid: localStorage.getItem("webos_uuid")
-            };
-
+        async function loadData(id = activeFolderId) {
+            document.getElementById('status').innerText = "Loading...";
             try {
-                // KIRIM VIA SMARTFETCH (Otomatis muncul Progress Bar Swal2)
-                const res = await smartFetch(payload, base64Data);
-                if (res.status === "success") {
-                    OS.notify("Berhasil", `File '${file.name}' mendarat di Cloud!`, "success");
-                    loadData(); // Refresh list
-                }
-            } catch (err) {
-                Swal.fire("Upload Gagal", err.message, "error");
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                renderMainContent(data);
+                document.getElementById('status').innerText = "Done";
+            } catch (e) { document.getElementById('status').innerText = "Error"; }
+        }
+
+        async function toggleFolder(id, name, element, depth) {
+            const subTree = document.getElementById(`sub-${id}`);
+            const expander = element.querySelector('.expander');
+            pathStack = pathStack.slice(0, depth); 
+            pathStack.push({ id, name, depth });
+            document.getElementById('path-input').value = `Root / ` + pathStack.map(i => i.name).join(' / ');
+            activeFolderId = id;
+            document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('active'));
+            element.classList.add('active');
+            if (pathStack.length > 1) lastParentId = pathStack[pathStack.length - 2].id;
+            else lastParentId = "";
+
+            if (!loadedNodes[id]) {
+                if (expander) expander.innerHTML = "⌛";
+                const res = await fetch(`${GAS_URL}?action=GET_TREE&folderId=${id}`);
+                const data = await res.json();
+                subTree.innerHTML = data.folders.map(f => createTreeNode(f.id, f.name, false, depth + 1)).join('');
+                loadedNodes[id] = true;
+                renderMainContent(data);
+                if (expander) expander.innerHTML = "▶";
+            } else { await loadData(id); }
+
+            const isOpening = !subTree.classList.contains('show');
+            subTree.classList.toggle('show', isOpening);
+            if (expander) expander.classList.toggle('open', isOpening);
+        }
+
+        function renderMainContent(data) {
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+            data.folders.forEach(f => {
+                list.innerHTML += `<div class="file-row" onclick="syncAndOpen('${f.id}', '${f.name}')" oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-folder"></i> ${f.name}</div><div>Folder</div><div>--</div></div>`;
+            });
+            data.files.forEach(f => {
+                const ext = f.name.split('.').pop().toUpperCase();
+                //list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen(${JSON.stringify(f)})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
+
+                list.innerHTML += `<div class="file-row" ondblclick='parent.handleFileOpen({id:"${f.id}", name:"${f.name.replace(/'/g, "\\'")}"})' oncontextmenu="showCtx(event, '${f.id}', '${f.name}')"><div><i class="fas fa-file-alt" style="color:#999"></i> ${f.name}</div><div>${ext}</div><div>N/A</div></div>`;
+            });
+        }
+
+        function filterList() {
+            const val = document.getElementById('filter-input').value.toLowerCase();
+            document.querySelectorAll('.file-row').forEach(row => {
+                const name = row.querySelector('div:first-child').innerText.toLowerCase();
+                row.style.display = name.includes(val) ? 'grid' : 'none';
+            });
+        }
+
+        function syncAndOpen(id, name) {
+            const row = document.querySelector(`#node-${id} .tree-row`);
+            if (row) row.click();
+            else window.location.href = `inner_explorer.html?folderId=${id}&pName=${name}`;
+        }
+
+        function showCtx(e, id, name) {
+            e.preventDefault(); e.stopPropagation();
+            selectedId = id; selectedName = name;
+            closeMenus();
+            const menu = document.getElementById('ctx-item');
+            const ext = name.split('.').pop().toLowerCase();
+            const editBtn = menu.querySelector('[onclick*="openEditor"]');
+            if (editBtn) editBtn.style.display = ['js','html','css','txt','json'].includes(ext) ? 'block' : 'none';
+            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        }
+
+        function showSidebarCtx(e, id, name) {
+            e.preventDefault(); e.stopPropagation();
+            selectedId = id; selectedName = name;
+            closeMenus();
+            const menu = document.getElementById('ctx-sidebar');
+            menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+        }
+
+        document.getElementById('main-container').oncontextmenu = (e) => {
+            if (e.target.id === 'file-list' || e.target.id === 'main-container') {
+                e.preventDefault(); closeMenus();
+                const menu = document.getElementById('ctx-empty');
+                menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
             }
         };
-        reader.readAsDataURL(file);
-    }
 
-    // DRAG & DROP EVENTS
-    const dropZone = document.getElementById('drop-zone');
-    window.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.style.display = 'flex';
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.style.display = 'none');
-    window.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.display = 'none';
-        if (e.dataTransfer.files.length > 0) {
-            handleFileUpload(e.dataTransfer.files[0]);
-        }
-    });
+        function closeMenus() { document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none'); }
+        window.onclick = closeMenus;
 
-    /* ============================================================
-       6. FILE OPERATIONS (RENAME, DELETE, MKDIR)
-       ============================================================ */
-
-    async function createNewFolder() {
-        const { value: folderName } = await Swal.fire({
-            title: 'Folder Baru',
-            input: 'text',
-            inputPlaceholder: 'Masukkan nama folder...',
-            showCancelButton: true
-        });
-
-        if (folderName) {
-            const res = await smartFetch({
-                action: 'TERMINAL_EXEC',
-                command: 'mkdir',
-                args: folderName,
-                currentDir: activeFolderId
-            });
-            if (res.status === "success") {
+        async function createNewFolder() {
+            const n = prompt("Folder baru:");
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'TERMINAL_EXEC', command:'mkdir', args:n, currentDir:activeFolderId})});
                 loadData();
-                OS.notify("Sukses", "Folder dibuat", "success");
             }
         }
-    }
-    /* ============================================================
-       7. CONTEXT MENU & UI UTILS
-       ============================================================ */
-    let selectedId = null, selectedName = "";
-
-    function showCtx(e, id, name) {
-        e.preventDefault(); e.stopPropagation();
-        selectedId = id; selectedName = name;
-        closeMenus();
-        
-        const menu = document.getElementById('ctx-item');
-        menu.style.display = 'block';
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-    }
-
-    function closeMenus() { 
-        document.querySelectorAll('.ctx-menu').forEach(m => m.style.display = 'none'); 
-    }
-
-    window.onclick = closeMenus;
-
-    // FUNGSI RENAME FILE/FOLDER
-    async function renameItem() {
-        const { value: newName } = await Swal.fire({
-            title: 'Ganti Nama',
-            input: 'text',
-            inputValue: selectedName,
-            showCancelButton: true
-        });
-
-        if (newName && newName !== selectedName) {
-            const res = await smartFetch({ action: 'RENAME', id: selectedId, newName: newName });
-            if (res.status === "success") {
+        async function createNewFile() {
+            const n = prompt("File baru:");
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'UPSERT_FILE', name:n, mimeType:'text/plain', base64:'', folderId:activeFolderId})});
                 loadData();
-                OS.notify("Sukses", "Nama diperbarui", "success");
             }
         }
-    }
-
-    // FUNGSI DELETE FILE/FOLDER
-    async function deleteItem() {
-        const result = await Swal.fire({
-            title: 'Hapus Item?',
-            text: `Yakin ingin menghapus "${selectedName}"?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Ya, Hapus!'
-        });
-
-        if (result.isConfirmed) {
-            const res = await smartFetch({ action: 'MOVE_TO_TRASH', id: selectedId });
-            if (res.status === "success") {
+        async function renameItem() {
+            const n = prompt("Nama baru:", selectedName);
+            if (n) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'RENAME', id:selectedId, newName:n})});
                 loadData();
-                OS.notify("Dihapus", "Item dipindahkan ke sampah", "success");
             }
         }
-    }
-
-    // 8. INITIALIZATION
-    window.onload = async () => {
-        await initTree();
-        console.log("Explorer Engine Ready.");
-    };
-
-    // Objek Notifikasi Lokal (Jika belum ada di index)
-    const OS = {
-        notify: (title, text, icon) => {
-            Swal.fire({ title, text, icon, timer: 1500, showConfirmButton: false });
+        async function deleteItem() {
+            if (confirm("Hapus?")) {
+                await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'MOVE_TO_TRASH', id:selectedId})});
+                loadData();
+            }
         }
-    };
+
+        init();
+        const resizer = document.getElementById("resizer");
+        const sidePane = document.getElementById("side-pane");
+
+        resizer.onmousedown = (e) => {
+            document.body.classList.add("resizing");
+            
+            const doDrag = (e) => {
+                // Batasi lebar minimum 100px dan maksimum 500px biar gak hilang
+                if (e.clientX > 100 && e.clientX < 500) {
+                    sidePane.style.width = e.clientX + "px";
+                }
+            };
+
+            const stopDrag = () => {
+                document.body.classList.remove("resizing");
+                document.removeEventListener("mousemove", doDrag);
+                document.removeEventListener("mouseup", stopDrag);
+            };
+
+            document.addEventListener("mousemove", doDrag);
+            document.addEventListener("mouseup", stopDrag);
+        };
+
     </script>
 </body>
 </html>
