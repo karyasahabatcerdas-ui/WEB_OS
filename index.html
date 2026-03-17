@@ -1195,16 +1195,21 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const dataUrl = e.target.result;
+                    const target = document.getElementById(targetId);
                     if (isDiv) {
-                        document.getElementById(targetId).style.backgroundImage = `url('${dataUrl}')`;
+                        // Cuma update kotak kecil (preview-bg-box)
+                        target.style.backgroundImage = `url('${dataUrl}')`;
                     } else {
-                        document.getElementById(targetId).src = dataUrl;
+                        target.src = dataUrl;
                     }
-                    applyDesktopPreview(); // Update preview seketika
+                    
+                    // JANGAN PANGGIL applyDesktopPreview() DI SINI!
+                    console.log("Preview gambar terpasang di kotak, menunggu Save...");
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
 
        function applyDesktopPreview() {
             const previewBox = document.getElementById('preview-bg-box');
@@ -1262,10 +1267,20 @@
 
         // 5. Clear Desktop Image
         function clearDesktopImg() {
-            document.getElementById('preview-bg-box').style.backgroundImage = 'none';
-            document.getElementById('bg-input').value = "";
-            applyDesktopPreview();
+            const previewBox = document.getElementById('preview-bg-box');
+            if (previewBox) {
+                previewBox.style.backgroundImage = 'none'; // Kosongkan kotak preview
+            }
+            
+            const bgInput = document.getElementById('bg-input');
+            if (bgInput) {
+                bgInput.value = ""; // Reset input file-nya
+            }
+            
+            // JANGAN PANGGIL applyDesktopPreview() DI SINI!
+            console.log("Kotak preview dikosongkan.");
         }
+
 
         // 6. Global Monaco Update
         function updateAllMonacoEditors() {
