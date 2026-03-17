@@ -188,8 +188,8 @@
         }
 
         function getIP(json) {
-            document.write("My public IP address is: ", json.ip);
-            return json.ip;
+           console.log("My public IP address is: ", json.ip);
+            //return json;
         }
 
 
@@ -207,12 +207,14 @@
             try {
                 // 1. Ambil IP Publik dari API Eksternal
                 //const ipRes = await fetch('https://api.ipify.org');
-                const ipRes = getIP(resIP);
-                const clientIP = await ipRes.text();
-                //console.log("habis dapat ip", clientIP);
+                //const ipRes = getIP(resIP);
+                const clientIP = getIP(resIP) ? resIP.ip : "";
+
+                console.log("habis dapat ip", clientIP);
 
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
                 const ua = navigator.userAgent; // info client pakai apa lengkap
+                console.log("baca ua: ",ua)
                 let deviceType = "Desktop";
                 if (/Mobi|Android|iPhone/i.test(ua)) {  //deteksi android bukan?
                     deviceType= "Mobile";
