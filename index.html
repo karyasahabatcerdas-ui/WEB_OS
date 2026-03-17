@@ -81,35 +81,35 @@
 
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
         .taskbar { background: var(--bg-panel); color: var(--text-main); border-top: 1px solid var(--border); }
+        .taskbar { height: 50px; backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000;}
         .win-header { background: var(--bg-panel); color: var(--text-main); border-bottom: 1px solid var(--border); }
+        .win-header { padding: 10px 15px; cursor: move; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .sub-window { background: var(--bg-panel); border: 1px solid var(--border); }
+        .sub-window { position: absolute; width: 600px; height: 400px; backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }
+        
 
 
 
         /*:root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }*/
         /*[data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }*/
 
-        /*body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #2c3e50; }*/
-        #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }
-        
-        /* .taskbar { height: 50px; background: var(--bg-panel); backdrop-filter: blur(15px); position: fixed; bottom: 0; width: 100%; display: flex; align-items: center; z-index: 10000; border-top: 1px solid var(--border); }
-        */
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif;}
+        #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }      
+
         .start-btn { cursor: pointer; padding: 0 20px; height: 100%; display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--accent); }
         .start-btn:hover { background: rgba(0,0,0,0.1); }
 
-        .sub-window { position: absolute; width: 600px; height: 400px; background: var(--bg-panel); backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }
-        /*.win-header { padding: 10px 15px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); font-weight: bold; } */
         .win-body { flex: 1; overflow: hidden; background: white; }        
         .win-controls button { background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-main); }
 
-        .login-screen { position: fixed; inset: 0; background: #2c3e50; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
+        .login-screen { position: fixed; inset: 0; background: #051b5a; z-index: 20000; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column; }
         
         #start-menu { position: absolute; bottom: 55px; left: 10px; width: 280px; background: white; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); display: none; z-index: 10001; padding: 10px; }
+
         .menu-item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-radius: 8px; color: #333; }
         .menu-item:hover { background: #f0f0f0; color: var(--accent); }
 
         #ctx-desktop { position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px; }
-
 
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
@@ -185,7 +185,7 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxfpFq8FFO4AAF53h5VvFYzsoP3lfvUyNR5enoiJDf_shsASOFPi7Hy2B3FAfUeJcym/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
-        const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
+        //const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
         let windowCount = 0;
         const editors = {};
