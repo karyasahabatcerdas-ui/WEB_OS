@@ -1171,8 +1171,8 @@
 
         // 6. Global Monaco Update
         function updateAllMonacoEditors() {
-            const theme = document.getElementById('set-monaco-theme').value;
-            const font = document.getElementById('set-monaco-font').value;
+            const newTheme = document.getElementById('set-monaco-theme').value;
+            const newFont = document.getElementById('set-monaco-font').value;
             const newSize = parseInt(document.getElementById('set-monaco-size').value) || 14; // Ambil angka font size
 
             // Simpan semuanya
@@ -1240,16 +1240,15 @@
                     localStorage.setItem("sysDateFormat", document.getElementById('set-date-format').value);
                     localStorage.setItem("sysHourFormat", document.getElementById('set-hour-format').value);
                     
-                    // Simpan juga URL wallpaper baru jika dikirim balik oleh GAS (opsional tapi bagus)
-                    if (result.wallpaper) {
-                        sessionStorage.setItem("userWallpaper", result.wallpaper);
-                    }
+                // Simpan juga URL wallpaper baru jika dikirim balik oleh GAS (opsional tapi bagus)
+                if (result.wallpaper) {
+                    sessionStorage.setItem("userWallpaper", result.wallpaper);
+                }
 
-                    // Update Tampilan Seketika
+                // Update Tampilan Seketika
                     applyDesktopPreview();
                     updateAllMonacoEditors();
-                    updateClock();
-                    
+                    updateClock();                    
                     const selectedTheme = document.getElementById('set-win-theme').value;
                     applyTheme(selectedTheme);
 
