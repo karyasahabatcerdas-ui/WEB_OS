@@ -81,10 +81,10 @@
         }
 
         #start-menu {
-            background: var(--swal-bg) !important;
-            color: var(--swal-text) !important;
+            background: var(--bg-panel) !important;
+            color: var(--text-main) !important;
             border: 1px solid var(--border) !important;
-            border-radius: 15px !important; /* Biar curve sesuai selera lo */
+            border-radius: 10px !important;
         }
 
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
@@ -161,13 +161,6 @@
             color: #fff;
         }
 
-
-
-
-
-        /*:root { --bg-panel: rgba(255, 255, 255, 0.7); --text-main: #333; --accent: #007bff; --border: rgba(0,0,0,0.1); }*/
-        /*[data-theme="dark"] { --bg-panel: rgba(30, 30, 30, 0.85); --text-main: #f0f0f0; --border: rgba(255,255,255,0.1); }*/
-
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif;}
         #desktop { width: 100vw; height: calc(100vh - 50px); background: url('https://images.unsplash.com') center/cover; position: relative; }      
 
@@ -181,21 +174,42 @@
         
 
 
-        .menu-item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-radius: 8px; color: #333; }
-        .menu-item:hover { background: #f0f0f0; color: var(--accent); }
+        .menu-item { padding: 12px; 
+            cursor: pointer; display: 
+            flex; align-items: center;
+             gap: 12px; border-radius: 8px; 
+             color: #333; }
 
-        #ctx-desktop { position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px; }
+        .menu-item:hover { 
+            background: #f0f0f0; 
+            color: var(--accent); }
+
+        #ctx-desktop { position: absolute; 
+            /*background: white; */
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+            display: none; 
+            z-index: 9999; 
+            padding: 5px; 
+            min-width: 160px; }
+
+
 
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
-            display: none; position: absolute; background-color: #252526;
+            display: none; position: absolute; 
+            /*background-color: #252526; */
             min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
             z-index: 10002; border: 1px solid #444; padding: 5px 0;
         }
-        .dropdown-content div { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; font-size: 12px; cursor: pointer; }
-        .dropdown-content div:hover { background-color: #094771; color: white; }
+        .dropdown-content div { color: #ccc; 
+            padding: 8px 12px; text-decoration: none; display: block; font-size: 12px; cursor: pointer; }
+        .dropdown-content div:hover {
+             background-color: #094771; color: white; }
         .dropdown:hover .dropdown-content { display: block; }
-        .dropdown-content hr { border: 0; border-top: 1px solid #444; margin: 5px 0; }
+        .dropdown-content hr { border: 0; 
+            border-top: 1px solid #444; margin: 5px 0; }
 
 
 
@@ -243,7 +257,7 @@
         </div>
 
         <!-- Desktop Context Menu -->
-        <div id="ctx-desktop" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px;">
+        <div id="ctx-desktop" style="position: absolute; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 9999; padding: 5px; min-width: 160px;">
             <div class="menu-item" onclick="createNewExplorer()"><i class="fas fa-folder-plus"></i> New Explorer</div>
             <div class="menu-item" onclick="openTerminal()"><i class="fas fa-terminal"></i> Terminal</div>
         </div>
@@ -623,7 +637,10 @@
         }
 
         function addToTaskbar(winId, appId, title) {
-            const icon = `<div id="${appId}" onclick="focusWin('${winId}')" style="padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; font-size: 12px;"><i class="fas fa-folder"></i> ${title}</div>`;
+           // const icon = `<div id="${appId}" onclick="focusWin('${winId}')" style="padding: 5px 10px; background: rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; font-size: 12px;"><i class="fas fa-folder"></i> ${title}</div>`;
+
+            const icon = `<div id="${appId}" onclick="focusWin('${winId}')" style="padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;"><i class="fas fa-folder"></i> ${title}</div>`;
+
             document.getElementById('taskbar-apps').insertAdjacentHTML('beforeend', icon);
         }
 
@@ -849,11 +866,11 @@
                 // KODE LENGKAP WINDOW (Header + Menu Bar + Body)
                 const winHtml = `
                     <div id="${winId}" class="sub-window" 
-                        style="width:850px; height:600px; top:60px; left:120px; z-index:1000; display: flex; flex-direction: column; background: #1e1e1e; border: 1px solid #444; resize: both; overflow: hidden;" 
+                        style="width:850px; height:600px; top:60px; left:120px; z-index:1000; display: flex; flex-direction: column; border: 1px solid #444; resize: both; overflow: hidden;" 
                         onmousedown="focusWin('${winId}')">
                         
                         <!-- 1. HEADER (TETAP) -->
-                        <div class="win-header" style="height: 35px; background: #333; color: white; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" onmousedown="dragWin(this.parentElement)">
+                        <div class="win-header" style="height: 35px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; cursor: move;" onmousedown="dragWin(this.parentElement)">
                             <span>📝 ${fileName}</span>
                             <div class="win-controls">
                                 <button onclick="toggleMinimize('${winId}')" title="Minimize" style="color:white; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-window-minimize"></i></button>
@@ -863,7 +880,7 @@
                         </div>
 
                         <!-- 2. MENU BAR LENGKAP (TETAP) -->
-                        <div class="editor-menubar" style="background: #252526; display: flex; padding: 5px 10px; gap: 15px; border-bottom: 1px solid #333;">
+                        <div class="editor-menubar" style="display: flex; padding: 5px 10px; gap: 15px; border-bottom: 1px solid #333;">
                             <div class="dropdown">
                                 <span style="color:#ccc; cursor:pointer; font-size:12px;">File</span>
                                 <div class="dropdown-content">
@@ -1061,11 +1078,11 @@
             const boxHeight = Math.round((screenH / screenW) * boxWidth); // Tinggi menyesuaikan rasio layar
 
             const winHtml = `
-            <div id="${winId}" class="sub-window" style="width:650px; height:550px; top:50px; left:50px; background: #f4f7f9; display:flex; flex-direction:column;">
-                    <div class="win-header" onmousedown="dragWin(this.parentElement)" style="background:#fff; border-bottom:1px solid #ddd; color:#333;">
+            <div id="${winId}" class="sub-window" style="width:650px; height:550px; top:50px; left:50px; display:flex; flex-direction:column;">
+                    <div class="win-header" onmousedown="dragWin(this.parentElement)" style="border-bottom:1px solid #ddd; ">
                         <span>⚙️ System Control Panel</span>
                         <div class="win-controls">
-                            <button onclick="closeWin('${winId}')" style="color:#333;"><i class="fas fa-times"></i></button>
+                            <button onclick="closeWin('${winId}')" ><i class="fas fa-times"></i></button>
                         </div>
                     </div>
                     
@@ -1073,7 +1090,7 @@
                     <!-- AREA TENGAH: KONTEN (SCROLLABLE) -->
                     <div style="flex:1; display:flex; overflow:hidden;">
                         <!-- Sidebar Navigasi -->
-                        <div style="width:180px; background:#fff; border-right:1px solid #ddd; padding:10px; display:flex; flex-direction:column; gap:5px;">
+                        <div style="width:180px; border-right:1px solid #ddd; padding:10px; display:flex; flex-direction:column; gap:5px;">
                             <div class="nav-item active" onclick="switchSettingsTab('sec-account', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-user-circle"></i> Account</div>
                             <div class="nav-item" onclick="switchSettingsTab('sec-desktop', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-desktop"></i> Desktop</div>
                             <div class="nav-item" onclick="switchSettingsTab('sec-monaco', this)" style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px;"><i class="fas fa-code"></i> Editor</div>
@@ -1086,11 +1103,11 @@
                             <!-- A. ACCOUNT & SECURITY -->
                             <div id="sec-account" class="settings-tab-content">
                                 <h3 style="margin-top:0; font-size:16px;">Account & Security</h3>
-                                <div style="display:flex; align-items:center; gap:20px; background:white; padding:20px; border-radius:12px; border:1px solid #eee;">
+                                <div style="display:flex; align-items:center; gap:20px; padding:20px; border-radius:12px; border:1px solid #eee;">
                                     <div style="text-align:center;">
                                         <div style="position:relative; width:80px; height:80px; margin:0 auto; cursor:pointer;" onclick="document.getElementById('avatar-input').click()">
                                             <img id="preview-avatar" src="${currentPhoto}" style="width:80px; height:80px; border-radius:15px; object-fit:cover; border:2px solid var(--accent);">
-                                            <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;"><i class="fas fa-camera" style="font-size:10px;"></i></div>
+                                            <div style="position:absolute; bottom:-5px; right:-5px; width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;"><i class="fas fa-camera" style="font-size:10px;"></i></div>
                                         </div>
                                         <input type="file" id="avatar-input" hidden accept="image/*" onchange="previewImageToTarget(this, 'preview-avatar', false)">
                                         <p style="font-size:10px; color:#888; margin-top:8px;">Klik gambar untuk ganti</p>
@@ -1116,7 +1133,7 @@
                             <!-- B1. DESKTOP SETTING -->
                             <div id="sec-desktop" class="settings-tab-content" style="display:none;">
                                 <h3 style="margin-top:0; font-size:16px;">Desktop Appearance</h3>
-                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                <div style="padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
                                     
                                     <!-- Preview Wallpaper & Mode -->
                                     <div style="display:flex; gap:20px; align-items:flex-start;">
@@ -1179,7 +1196,7 @@
                             <!-- B2. MONACO EDITOR SETTING -->
                             <div id="sec-monaco" class="settings-tab-content" style="display:none;">
                                 <h3 style="margin-top:0; font-size:16px;">Monaco Editor Settings</h3>
-                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                <div style="padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
                                     <div>
                                         <label style="font-size:11px; font-weight:bold; color:#666;">Editor Theme:</label>
                                         <select id="set-monaco-theme" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
@@ -1210,7 +1227,7 @@
                                                 <!-- C. SYSTEM REGION & TIME -->
                             <div id="sec-system" class="settings-tab-content" style="display:none;">
                                 <h3 style="margin-top:0; font-size:16px;">System Region & Time</h3>
-                                <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
+                                <div style="padding:20px; border-radius:12px; border:1px solid #eee; display:flex; flex-direction:column; gap:15px;">
                                     <div>
                                         <label style="font-size:11px; font-weight:bold; color:#666;">Region Setting:</label>
                                         <select id="set-region" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:4px;">
@@ -1240,9 +1257,9 @@
                         </div> <!-- End Content Area -->
                     </div>
                         <!-- Tombol Save di Bawah (Sticky) -->
-                        <div style="padding:15px; background:white; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
+                        <div style="padding:15px; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
                             <button onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
-                            <button onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--accent); color:white; font-weight:bold; cursor:pointer;">Apply Changes</button>
+                            <button onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; font-weight:bold; cursor:pointer;">Apply Changes</button>
                         </div>
 
                     </div> <!-- End win-body -->
@@ -1612,99 +1629,6 @@
                 });
             } */
 
-
-
-        /*
-     async function saveAllSettings() {
-            const uuid = localStorage.getItem("webos_uuid");
-            //const GAS_URL = "URL_SCRIPT_GOOGLE_KAMU_DI_SINI";
-
-            // 1. Ambil data dari UI
-            const avatarImg = document.getElementById('preview-avatar').src;
-            const previewBox = document.getElementById('preview-bg-box');
-            const bgRaw = previewBox ? previewBox.style.backgroundImage : "";
-            let cleanBgData = bgRaw.includes("data:image") ? bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : null;
-
-            // 2. Siapkan UI Progress Bar (Gunakan SweetAlert2 atau UI milikmu)
-            Swal.fire({
-                title: 'Menyinkronkan data...',
-                html: '<div style="width:100%; background:#eee; height:20px; border-radius:10px; overflow:hidden;">' +
-                    '<div id="real-prog-bar" style="width:0%; background:#3498db; height:100%; transition:0.3s;"></div>' +
-                    '</div><p id="prog-text" style="margin-top:10px;">Menyiapkan...</p>',
-                showConfirmButton: false,
-                allowOutsideClick: false
-            });
-
-            const updateUI = (percent, text) => {
-                document.getElementById('real-prog-bar').style.width = percent + "%";
-                document.getElementById('prog-text').innerText = text + " (" + percent + "%)";
-            };
-
-            try {
-                // --- TAHAP 1: KIRIM AVATAR (CHUNK) ---
-                if (avatarImg.startsWith("data:image")) {
-                    const chunkSize = 100000; // 100KB
-                    const total = Math.ceil(avatarImg.length / chunkSize);
-                    for (let i = 0; i < total; i++) {
-                        const chunk = avatarImg.slice(i * chunkSize, (i + 1) * chunkSize);
-                        await fetch(GAS_URL, {
-                            method: "POST",
-                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "avatar", chunk: chunk })
-                        });
-                        updateUI(Math.round(((i + 1) / total) * 50), "Mengirim Foto Profil..."); // 50% pertama untuk avatar
-                    }
-                }
-
-                // --- TAHAP 2: KIRIM WALLPAPER (CHUNK) ---
-                if (cleanBgData) {
-                    const chunkSize = 100000;
-                    const total = Math.ceil(cleanBgData.length / chunkSize);
-                    for (let i = 0; i < total; i++) {
-                        const chunk = cleanBgData.slice(i * chunkSize, (i + 1) * chunkSize);
-                        await fetch(GAS_URL, {
-                            method: "POST",
-                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "bg", chunk: chunk })
-                        });
-                        updateUI(50 + Math.round(((i + 1) / total) * 40), "Mengirim Wallpaper..."); // 40% berikutnya
-                    }
-                }
-
-                // --- TAHAP 3: FINAL PUSH (UPDATE PROFILE) ---
-                updateUI(95, "Memproses di Cloud...");
-                const payload = {
-                    action: "UPDATE_PROFILE",
-                    uuid: uuid,
-                    useChunks: true, // INI KUNCINYA: Memberitahu GAS untuk ambil data dari PropertiesService
-                    username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
-                    password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
-                    theme: document.getElementById('set-win-theme').value,
-                    region: document.getElementById('set-region').value,
-                    bgColor: document.getElementById('set-bg-color').value,
-                    bgMode: document.getElementById('set-bg-mode').value,
-                    monacoTheme: document.getElementById('set-monaco-theme').value,
-                    monacoFont: document.getElementById('set-monaco-font').value,
-                    monacoSize: document.getElementById('set-monaco-size').value,
-                    dateFormat: document.getElementById('set-date-format').value,
-                    hourFormat: document.getElementById('set-hour-format').value
-                };
-
-                const finalRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
-                const result = await finalRes.json();
-
-                if (result.status === "success") {
-                    updateUI(100, "Selesai!");
-                    OS.notify("Sukses", "Profil diperbarui!", "success");
-                    setTimeout(() => location.reload(), 1500); // Reload agar semua tema & foto berubah
-                } else {
-                    throw new Error(result.msg);
-                }
-
-            } catch (err) {
-                console.error(err);
-                Swal.fire('Gagal!', 'Terjadi kesalahan: ' + err.message, 'error');
-            }
-        }
-            */
 
         function updateClock() {
             const clockEl = document.getElementById('clock');
