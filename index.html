@@ -195,7 +195,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzJfGh-7jPKpmAg66DIS74c8hob2ULUSemB5JlLAl6LIy2TAlCbmcnh838PR9vMQ7Fl/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyfoOMWXDwNkMp8_o-cAloLbRxCuqI1tJdUUjCzYufdKYYPoXMJqncAJi7rG1zoN9_A/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         //const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -1373,6 +1373,93 @@
             });
         }
 
+        async function saveAllSettings() {
+                const uuid = localStorage.getItem("webos_uuid");
+                const avatarImg = document.getElementById('preview-avatar').src;
+                const previewBox = document.getElementById('preview-bg-box');
+                const bgRaw = previewBox ? previewBox.style.backgroundImage : "";
+                let cleanBgData = bgRaw.includes("url") ? bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : null;
+
+                Swal.fire({
+                    title: 'Sinkronisasi Cloud...',
+                    html: '<div style="width:100%; background:#eee; height:20px; border-radius:10px; overflow:hidden;">' +
+                        '<div id="real-prog-bar" style="width:0%; background:#3498db; height:100%; transition:0.3s;"></div>' +
+                        '</div><p id="prog-text" style="margin-top:10px;">Menghubungkan...</p>',
+                    showConfirmButton: false, allowOutsideClick: false
+                });
+
+                const updateUI = (percent, text) => {
+                    document.getElementById('real-prog-bar').style.width = percent + "%";
+                    document.getElementById('prog-text').innerText = text + " (" + percent + "%)";
+                };
+
+                try {
+                    // 1. Bersihkan sisa chunk gagal sebelumnya
+                    await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "CLEAN_CHUNK", uuid: uuid }) });
+
+                    const chunkSize = 250000; // 250KB per potong
+
+                    // 2. Kirim Avatar (0-45%)
+                    if (avatarImg.startsWith("data:image")) {
+                        const total = Math.ceil(avatarImg.length / chunkSize);
+                        for (let i = 0; i < total; i++) {
+                            const chunk = avatarImg.slice(i * chunkSize, (i + 1) * chunkSize);
+                            await fetch(GAS_URL, {
+                                method: "POST",
+                                body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "avatar", chunk: chunk, index: i })
+                            });
+                            updateUI(Math.round(((i + 1) / total) * 45), "Mengunggah Foto Profil...");
+                        }
+                    }
+
+                    // 3. Kirim Wallpaper (45-90%)
+                    if (cleanBgData && cleanBgData.startsWith("data:image")) {
+                        const total = Math.ceil(cleanBgData.length / chunkSize);
+                        for (let i = 0; i < total; i++) {
+                            const chunk = cleanBgData.slice(i * chunkSize, (i + 1) * chunkSize);
+                            await fetch(GAS_URL, {
+                                method: "POST",
+                                body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "bg", chunk: chunk, index: i })
+                            });
+                            updateUI(45 + Math.round(((i + 1) / total) * 45), "Mengunggah Wallpaper...");
+                        }
+                    }
+
+                    // 4. Final Update
+                    updateUI(95, "Memproses di Cloud...");
+                    const payload = {
+                        action: "UPDATE_PROFILE",
+                        uuid: uuid,
+                        username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
+                        password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
+                        theme: document.getElementById('set-win-theme').value,
+                        region: document.getElementById('set-region').value,
+                        bgColor: document.getElementById('set-bg-color').value,
+                        bgMode: document.getElementById('set-bg-mode').value,
+                        monacoTheme: document.getElementById('set-monaco-theme').value,
+                        monacoFont: document.getElementById('set-monaco-font').value,
+                        monacoSize: document.getElementById('set-monaco-size').value,
+                        dateFormat: document.getElementById('set-date-format').value,
+                        hourFormat: document.getElementById('set-hour-format').value
+                    };
+
+                    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+                    const result = await res.json();
+
+                    if (result.status === "success") {
+                        updateUI(100, "Sinkronisasi Berhasil!");
+                        setTimeout(() => location.reload(), 1200);
+                    } else {
+                        throw new Error(result.msg);
+                    }
+
+                } catch (err) {
+                    Swal.fire('Gagal!', 'Error: ' + err.message, 'error');
+                }
+            }
+
+
+        /*
      async function saveAllSettings() {
             const uuid = localStorage.getItem("webos_uuid");
             //const GAS_URL = "URL_SCRIPT_GOOGLE_KAMU_DI_SINI";
@@ -1401,7 +1488,7 @@
             try {
                 // --- TAHAP 1: KIRIM AVATAR (CHUNK) ---
                 if (avatarImg.startsWith("data:image")) {
-                    const chunkSize = 50000; // 50KB
+                    const chunkSize = 100000; // 100KB
                     const total = Math.ceil(avatarImg.length / chunkSize);
                     for (let i = 0; i < total; i++) {
                         const chunk = avatarImg.slice(i * chunkSize, (i + 1) * chunkSize);
@@ -1415,7 +1502,7 @@
 
                 // --- TAHAP 2: KIRIM WALLPAPER (CHUNK) ---
                 if (cleanBgData) {
-                    const chunkSize = 50000;
+                    const chunkSize = 100000;
                     const total = Math.ceil(cleanBgData.length / chunkSize);
                     for (let i = 0; i < total; i++) {
                         const chunk = cleanBgData.slice(i * chunkSize, (i + 1) * chunkSize);
@@ -1462,10 +1549,7 @@
                 Swal.fire('Gagal!', 'Terjadi kesalahan: ' + err.message, 'error');
             }
         }
-
-
-
-
+            */
 
         function updateClock() {
             const clockEl = document.getElementById('clock');
