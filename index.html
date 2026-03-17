@@ -1257,10 +1257,19 @@
                     localStorage.setItem("sysHourFormat", document.getElementById('set-hour-format').value);
                     
                 // Simpan juga URL wallpaper baru jika dikirim balik oleh GAS (opsional tapi bagus)
-                if (result.wallpaper) {
-                    sessionStorage.setItem("userWallpaper", result.wallpaper);
+                if (result.newWallpaper) {
+                    sessionStorage.setItem("userWallpaper", result.neWallpaper);
                 }
 
+                // 1. Update Session Storage dengan gambar baru (Base64 atau Link dari GAS)
+
+                    // 2. Update juga foto profil kalau diganti
+                if (result.newAvatar) {
+                    sessionStorage.setItem("userPhoto", result.newAvatar);
+                    if (document.getElementById('user-photo-img')) {
+                        document.getElementById('user-photo-img').src = result.newAvatar;
+                    }
+                }
                 // Update Tampilan Seketika
                     applyDesktopPreview();
                     updateAllMonacoEditors();
