@@ -195,7 +195,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzMAa2DUGRxYPXvTkNoGHeHi8RpTpasWBm-vY_jLk-Tzsn1P98kVQRWVfWFfmzJNti7/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx9Ro4sfzFRP-Yjlm-4FbsaMdbSPgHTAisUsaiRS9c9Ei5kgzvgNn1ft90qCPb7f837/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         //const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -379,6 +379,10 @@
                     localStorage.setItem("sysRegion", s.region || "id-ID");
                     localStorage.setItem("sysDateFormat", s.dateFormat || "dd/MM/yyyy");
                     localStorage.setItem("sysHourFormat", s.hourFormat || "24h");
+                    // --- SINKRONKAN SETTINGAN MONACO ---
+                    localStorage.setItem("sysMonacoTheme", s.monacoTheme || "vs-dark");
+                    localStorage.setItem("sysMonacoFont", s.monacoFont || "'Consolas', monospace");
+                    localStorage.setItem("sysMonacoSize", s.monacoSize || 14);
 
                     // 4. Nyalakan OS dengan data yang sudah lengkap
                     initOS();
@@ -1307,6 +1311,11 @@
                 password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
                 avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? document.getElementById('preview-avatar').src : null,
                 bgData: cleanBgData,
+
+                // --- TAMBAHKAN INI UNTUK MONACO ---
+                monacoTheme: document.getElementById('set-monaco-theme').value,
+                monacoFont: document.getElementById('set-monaco-font').value,
+                monacoSize: document.getElementById('set-monaco-size').value,
                 
                 // --- DATA BARU UNTUK KOLOM H ---
                 bgColor: document.getElementById('set-bg-color').value,
@@ -1326,6 +1335,31 @@
                 const result = await response.json();
                 
                 if (result.status === "success") {
+                        // 1.1 UPDATE NAMA USER (Gunakan value dari input)
+                        const newUsername = document.getElementById('set-username').value;
+                        if (!document.getElementById('chk-user').checked && newUsername) {
+                            sessionStorage.setItem("userName", newUsername);
+                            const nameEl = document.getElementById('user-name-span');
+                            if (nameEl) nameEl.innerText = newUsername; // Langsung ubah teks di Start Menu
+                        }
+
+                        // 1.2. UPDATE FOTO PROFIL (Gunakan respon dari GAS)
+                        if (result.newAvatar) {
+                            sessionStorage.setItem("userPhoto", result.newAvatar);
+                            const imgEl = document.getElementById('user-photo-img');
+                            if (imgEl) imgEl.src = result.newAvatar; // Langsung ubah gambar di Start Menu
+                        }
+
+                        // 1.3. UPDATE WALLPAPER (Gunakan respon dari GAS)
+                        if (result.newWallpaper) {
+                            sessionStorage.setItem("userWallpaper", result.newWallpaper);
+                            localStorage.setItem("desktopBg", result.newWallpaper);
+                            
+                            // Update kotak preview agar tidak lagi menampilkan Base64
+                            const pb = document.getElementById('preview-bg-box');
+                            if (pb) pb.style.backgroundImage = `url('${result.newWallpaper}')`;
+                        }
+
                     // 2. SIMPAN KE LOCAL STORAGE (Sesuai payload tadi)
                     localStorage.setItem("desktopBgColor", payload.bgColor);
                     localStorage.setItem("desktopBgMode", payload.bgMode);
