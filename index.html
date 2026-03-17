@@ -262,11 +262,14 @@
  
                     initOS();
                 } else {
+                    swal.close();
                     Swal.fire("Access Denied", result.msg, "error");
                 }
             } catch (e) {
+                swal.close();
                 Swal.fire("Error", "Gagal mendeteksi koneksi atau server down", "error");
             }
+            swal.close();
         }
 
 
