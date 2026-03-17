@@ -974,7 +974,7 @@
                                             <div id="preview-bg-box" onclick="document.getElementById('bg-input').click()" 
                                                 style="width:140px; height:85px; border-radius:10px; 
                                                     background-color: ${currentBgColor}; 
-                                                    background-image: ${currentBg ? `url('${currentBg}')` : 'none'}; 
+                                                    background-image: ${currentBg && currentBg !== "undefined" ? `url('${currentBg}')` : 'none'};
                                                     background-size: cover; 
                                                     background-position: center; 
                                                     border:2px solid #ddd; cursor:pointer; position:relative; overflow:hidden;">
@@ -1141,42 +1141,51 @@
             }
         }
 
-        // 4. Desktop Wallpaper Preview Engine (Stretch, Center, Tile)
-        function applyDesktopPreview() {
+       function applyDesktopPreview() {
             const previewBox = document.getElementById('preview-bg-box');
+            const desktop = document.getElementById('desktop');
+            
+            // Proteksi: Jika elemen belum ada di DOM (Settings belum dibuka), stop di sini.
+            if (!previewBox || !desktop) return; 
+
             const mode = document.getElementById('set-bg-mode').value;
             const color = document.getElementById('set-bg-color').value;
             
-            // Update Preview Box
+            // 1. Sinkronkan Warna
             previewBox.style.backgroundColor = color;
+            desktop.style.backgroundColor = color;
+
+            // 2. Sinkronkan Gambar (DENGAN VALIDASI ANTI-404)
+            const currentImg = previewBox.style.backgroundImage;
+            if (currentImg && currentImg !== "none" && currentImg !== "undefined" && currentImg !== "") {
+                desktop.style.backgroundImage = currentImg;
+            } else {
+                desktop.style.backgroundImage = "none";
+            }
+
+            // 3. Sinkronkan Mode (Gunakan satu blok pengecekan untuk keduanya)
             if (mode === "stretch") {
                 previewBox.style.backgroundSize = "100% 100%";
                 previewBox.style.backgroundRepeat = "no-repeat";
-            } else if (mode === "center") {
-                previewBox.style.backgroundSize = "auto";
-                previewBox.style.backgroundRepeat = "no-repeat";
-            } else { // Tile
-                previewBox.style.backgroundSize = "50%"; // Diperkecil di preview agar terlihat efek tile
-                previewBox.style.backgroundRepeat = "repeat";
-            }
-
-            // TERAPKAN LANGSUNG KE DESKTOP (Visual Real-time)
-            const desktop = document.getElementById('desktop');
-            desktop.style.backgroundColor = color;
-            desktop.style.backgroundImage = previewBox.style.backgroundImage;
-            
-            if (mode === "stretch") {
+                
                 desktop.style.backgroundSize = "100% 100%";
                 desktop.style.backgroundRepeat = "no-repeat";
             } else if (mode === "center") {
+                previewBox.style.backgroundSize = "auto";
+                previewBox.style.backgroundRepeat = "no-repeat";
+                
                 desktop.style.backgroundSize = "auto";
                 desktop.style.backgroundRepeat = "no-repeat";
                 desktop.style.backgroundPosition = "center";
-            } else {
+            } else { // Tile
+                previewBox.style.backgroundSize = "50%"; // Preview diperkecil biar kelihatan tile-nya
+                previewBox.style.backgroundRepeat = "repeat";
+                
                 desktop.style.backgroundSize = "auto";
                 desktop.style.backgroundRepeat = "repeat";
             }
         }
+
 
         // 5. Clear Desktop Image
         function clearDesktopImg() {
