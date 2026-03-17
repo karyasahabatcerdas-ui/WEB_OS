@@ -86,7 +86,16 @@
         .win-header { background: var(--bg-panel); color: var(--text-main); border-bottom: 1px solid var(--border); }
         .win-header { padding: 10px 15px; cursor: move; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .sub-window { background: var(--bg-panel); border: 1px solid var(--border); }
-        .sub-window { position: absolute; width: 600px; height: 400px; backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; }  
+        .sub-window { position: absolute; width: 600px; height: 400px; backdrop-filter: blur(20px); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); z-index: 10; } 
+        .sub-window {
+            min-width: 300px;
+            min-height: 200px;
+        }
+
+        /* Sembunyikan scrollbar bawaan browser saat resize jika perlu */
+        .sub-window::-webkit-resizer {
+            background-color: transparent;
+        }
 
 
 
@@ -121,6 +130,9 @@
         .dropdown-content div:hover { background-color: #094771; color: white; }
         .dropdown:hover .dropdown-content { display: block; }
         .dropdown-content hr { border: 0; border-top: 1px solid #444; margin: 5px 0; }
+
+
+
 
     </style>
 </head>
@@ -405,7 +417,8 @@
             const winId = `win-${windowCount}`;
             const appId = `app-${winId}`;
             const winHtml = `
-                <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')">
+                <!-- <div id="${winId}" class="sub-window" style="top:80px; left:80px;" onmousedown="focusWin('${winId}')"> -->
+                <div id="${winId}" class="sub-window" style="top:80px; left:80px; width:600px; height:400px; resize: both; overflow: hidden; display: flex; flex-direction: column;" onmousedown="focusWin('${winId}')">
                     <div class="win-header" onmousedown="dragWin(this.parentElement)">
                         <span>📁 ${title}</span>
                         <div class="win-controls">
@@ -472,6 +485,7 @@
             el.onmousedown = (e) => {
                 if (e.target.tagName === 'BUTTON') return;
                 focusWin(el.id);
+                 // MATIKAN INTERAKSI IFRAME SAAT DRAG/RESIZE
                 document.querySelectorAll('iframe').forEach(i => i.style.pointerEvents = 'none');
                 let p3 = e.clientX, p4 = e.clientY;
                 document.onmousemove = (e) => {
