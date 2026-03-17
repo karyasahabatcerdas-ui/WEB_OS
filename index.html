@@ -195,7 +195,7 @@
 
     <!-- Script tetep pake yang terakhir gue kirim, TAPI tambahin event.stopPropagation() di tombol start (cek kode di atas) -->
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbx9Ro4sfzFRP-Yjlm-4FbsaMdbSPgHTAisUsaiRS9c9Ei5kgzvgNn1ft90qCPb7f837/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwjpteUCCs6k_NdV5a2cHTLYc2ldGeXqnqDn-ZYui1e9D8CnnKLTGJGq8Bl3VsvlRkH/exec";
         const ROOT_ID = "1UhZoOSqtzhRALHy_LCchaDztPDkxs45B";
         //const STORED_HASH = "3d9996762c9d4c321426951df2368b02cd5489074a671a0ddd0298aec8622a0e"; //webOS@ksc111981//HASH_SHA256_PASSWORD_KAMU
         
@@ -1373,83 +1373,96 @@
             });
         }
 
-      async function saveAllSettings() {
-            // 1. Ambil data Wallpaper & bersihkan format CSS url()
+     async function saveAllSettings() {
+            const uuid = localStorage.getItem("webos_uuid");
+            //const GAS_URL = "URL_SCRIPT_GOOGLE_KAMU_DI_SINI";
+
+            // 1. Ambil data dari UI
+            const avatarImg = document.getElementById('preview-avatar').src;
             const previewBox = document.getElementById('preview-bg-box');
             const bgRaw = previewBox ? previewBox.style.backgroundImage : "";
-            let cleanBgData = null;
-            
-            // Proteksi: Hanya ambil data jika itu adalah file baru (Base64)
-            if (bgRaw && bgRaw.includes("data:image")) {
-                cleanBgData = bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
-            }
+            let cleanBgData = bgRaw.includes("data:image") ? bgRaw.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : null;
 
-            // 2. Susun Payload
-            const payload = {
-                action: "UPDATE_PROFILE",
-                uuid: localStorage.getItem("webos_uuid"),
-                username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
-                password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
-                avatarData: document.getElementById('preview-avatar').src.startsWith("data:image") ? document.getElementById('preview-avatar').src : null,
-                bgData: cleanBgData,
-                monacoTheme: document.getElementById('set-monaco-theme').value,
-                monacoFont: document.getElementById('set-monaco-font').value,
-                monacoSize: document.getElementById('set-monaco-size').value,
-                bgColor: document.getElementById('set-bg-color').value,
-                bgMode: document.getElementById('set-bg-mode').value,
-                theme: document.getElementById('set-win-theme').value,
-                region: document.getElementById('set-region').value,
-                dateFormat: document.getElementById('set-date-format').value,
-                hourFormat: document.getElementById('set-hour-format').value
+            // 2. Siapkan UI Progress Bar (Gunakan SweetAlert2 atau UI milikmu)
+            Swal.fire({
+                title: 'Menyinkronkan data...',
+                html: '<div style="width:100%; background:#eee; height:20px; border-radius:10px; overflow:hidden;">' +
+                    '<div id="real-prog-bar" style="width:0%; background:#3498db; height:100%; transition:0.3s;"></div>' +
+                    '</div><p id="prog-text" style="margin-top:10px;">Menyiapkan...</p>',
+                showConfirmButton: false,
+                allowOutsideClick: false
+            });
+
+            const updateUI = (percent, text) => {
+                document.getElementById('real-prog-bar').style.width = percent + "%";
+                document.getElementById('prog-text').innerText = text + " (" + percent + "%)";
             };
 
-            // 3. Tampilkan Loading (Ganti Progress Bar yang bikin error)
-            OS.showLoading('Menyinkronkan data ke Cloud...');
-
             try {
-                // 4. Kirim menggunakan fetch (Tanpa Content-Type header agar tidak memicu Preflight/CORS)
-                const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    mode: "no-cors", // Mode ini seringkali diperlukan untuk GAS jika CORS bermasalah
-                    body: JSON.stringify(payload)
-                });
-
-                // Catatan: Dalam mode 'no-cors', kita tidak bisa membaca response JSON.
-                // Kita asumsikan sukses jika tidak ada error network, lalu refresh UI.
-                
-                // Simpan ke Local Storage agar perubahan langsung terasa di sisi Client
-                localStorage.setItem("desktopBgColor", payload.bgColor);
-                localStorage.setItem("desktopBgMode", payload.bgMode);
-                localStorage.setItem("sysWinTheme", payload.theme);
-                localStorage.setItem("sysRegion", payload.region);
-                localStorage.setItem("sysDateFormat", payload.dateFormat);
-                localStorage.setItem("sysHourFormat", payload.hourFormat);
-                
-                // Update Nama & Foto di UI (Session)
-                const newUsername = document.getElementById('set-username').value;
-                if (!document.getElementById('chk-user').checked && newUsername) {
-                    sessionStorage.setItem("userName", newUsername);
-                    if (document.getElementById('user-name-span')) document.getElementById('user-name-span').innerText = newUsername;
+                // --- TAHAP 1: KIRIM AVATAR (CHUNK) ---
+                if (avatarImg.startsWith("data:image")) {
+                    const chunkSize = 50000; // 50KB
+                    const total = Math.ceil(avatarImg.length / chunkSize);
+                    for (let i = 0; i < total; i++) {
+                        const chunk = avatarImg.slice(i * chunkSize, (i + 1) * chunkSize);
+                        await fetch(GAS_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "avatar", chunk: chunk })
+                        });
+                        updateUI(Math.round(((i + 1) / total) * 50), "Mengirim Foto Profil..."); // 50% pertama untuk avatar
+                    }
                 }
 
-                // Terapkan Perubahan Langsung
-                applyDesktopPreview(); 
-                updateAllMonacoEditors();
-                updateClock();
-                applyTheme(payload.theme);
+                // --- TAHAP 2: KIRIM WALLPAPER (CHUNK) ---
+                if (cleanBgData) {
+                    const chunkSize = 50000;
+                    const total = Math.ceil(cleanBgData.length / chunkSize);
+                    for (let i = 0; i < total; i++) {
+                        const chunk = cleanBgData.slice(i * chunkSize, (i + 1) * chunkSize);
+                        await fetch(GAS_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "UPLOAD_CHUNK", uuid: uuid, type: "bg", chunk: chunk })
+                        });
+                        updateUI(50 + Math.round(((i + 1) / total) * 40), "Mengirim Wallpaper..."); // 40% berikutnya
+                    }
+                }
 
-                Swal.close();
-                OS.notify("Berhasil", "Pengaturan telah dikirim ke Cloud!", "success");
-                
-                // Opsional: Tutup jendela settings
-                closeWin('win-settings');
+                // --- TAHAP 3: FINAL PUSH (UPDATE PROFILE) ---
+                updateUI(95, "Memproses di Cloud...");
+                const payload = {
+                    action: "UPDATE_PROFILE",
+                    uuid: uuid,
+                    useChunks: true, // INI KUNCINYA: Memberitahu GAS untuk ambil data dari PropertiesService
+                    username: !document.getElementById('chk-user').checked ? document.getElementById('set-username').value : null,
+                    password: !document.getElementById('chk-pass').checked ? await sha256(document.getElementById('set-password').value) : null,
+                    theme: document.getElementById('set-win-theme').value,
+                    region: document.getElementById('set-region').value,
+                    bgColor: document.getElementById('set-bg-color').value,
+                    bgMode: document.getElementById('set-bg-mode').value,
+                    monacoTheme: document.getElementById('set-monaco-theme').value,
+                    monacoFont: document.getElementById('set-monaco-font').value,
+                    monacoSize: document.getElementById('set-monaco-size').value,
+                    dateFormat: document.getElementById('set-date-format').value,
+                    hourFormat: document.getElementById('set-hour-format').value
+                };
 
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                Swal.close();
-                OS.notify("Koneksi Gagal", "Pastikan internet stabil dan GAS URL benar.", "error");
+                const finalRes = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+                const result = await finalRes.json();
+
+                if (result.status === "success") {
+                    updateUI(100, "Selesai!");
+                    OS.notify("Sukses", "Profil diperbarui!", "success");
+                    setTimeout(() => location.reload(), 1500); // Reload agar semua tema & foto berubah
+                } else {
+                    throw new Error(result.msg);
+                }
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Gagal!', 'Terjadi kesalahan: ' + err.message, 'error');
             }
         }
+
 
 
 
