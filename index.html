@@ -1184,8 +1184,16 @@
             // Proteksi: Jika elemen belum ada di DOM (Settings belum dibuka), stop di sini.
             if (!previewBox || !desktop) return; 
 
-            const mode = document.getElementById('set-bg-mode').value;
-            const color = document.getElementById('set-bg-color').value;
+            //const mode = document.getElementById('set-bg-mode').value;            
+            //const color = document.getElementById('set-bg-color').value;
+            
+            // PASTIKAN: Ambil dari localStorage jika element select tidak ditemukan (saat awal loading)
+            // Atau ambil langsung dari dropdown jika jendela settings sedang terbuka
+            const modeSelect = document.getElementById('set-bg-mode');
+            const mode = modeSelect ? modeSelect.value : (localStorage.getItem("desktopBgMode") || "stretch");
+            
+            const colorInput = document.getElementById('set-bg-color');
+            const color = colorInput ? colorInput.value : (localStorage.getItem("desktopBgColor") || "#2c3e50");
             
             // 1. Sinkronkan Warna
             previewBox.style.backgroundColor = color;
