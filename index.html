@@ -208,19 +208,19 @@
                 // 1. Ambil IP Publik dari API Eksternal
                 //const ipRes = await fetch('https://api.ipify.org');
                 //const ipRes = getIP(resIP);
-                let clientIP ;
+                window.clientIP ="" ;
                 ///const ipFormInput = document.getElementById('ipFormInput');
 
                 fetch('https://api.ipify.org?format=json')
                     .then((response) => { return response.json() })
                     .then((json) => {
                         const ip = json.ip;
-                        clientIP = ip;
+                        window.clientIP = ip;
                     })
                     .catch((err) => { console.error(`Error getting IP Address: ${err}`) })
 
 
-                console.log("habis dapat ip", clientIP);
+                console.log("habis dapat ip", window.clientIP);
 
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
                 const ua = navigator.userAgent; // info client pakai apa lengkap
@@ -232,7 +232,7 @@
                     deviceType= "Desktop";
                     }
 
-                const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
+                const deviceInfo = `${deviceType} (${ua}) - IP: ${window.clientIP}`;
                 //console.log("habis dapat browser :", deviceInfo);
                 // 3. Kirim ke GAS
                 const response = await fetch(GAS_URL, {
