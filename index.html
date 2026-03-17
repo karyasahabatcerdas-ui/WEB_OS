@@ -56,6 +56,7 @@
             <input type="text" id="login-user" placeholder="Username" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
             <input type="password" id="login-pass" placeholder="Password" style="padding:12px; border-radius:8px; border:none; width: 200px; text-align: center;">
             <button type="submit" style="margin-top:15px; padding:8px 30px; border-radius:20px; border:none; background:var(--accent); color:white; cursor:pointer;">Unlock</button>
+            <label id="ip-addr" style="color:black ; padding:12px; border-radius:8px; border:none; width: 200px; text-align: center; display: inline-block;">IP: xxx.xxx.xxx.xxx </label>           
         </form>
     </div>
 
@@ -116,6 +117,18 @@
         let isMonacoReady = false; // Flag status Monaco
         let isMonacoLoading = false; // Flag tambahan supaya tidak load berkali-kali
         let monacoQueue = [];      // Antrean fungsi jika belum ready  
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI sudah siap, sekarang panggil fungsi IP
+            getVisitorIP(function(ip) {
+                const ipField = document.getElementById('ip-addr');
+                if (ipField) {
+                    ipField.textContent = ip ? `IP: ${ip}` : "IP: xxx.xxx.xxx.xxx";
+                }
+            });
+        });
+
 
         // Setup Environment (Anti vs/vs)
         window.MonacoEnvironment = {
@@ -192,10 +205,7 @@
                 xhr.send();
             }
 
-        // Populate the hidden field with the visitor's IP address
-           // getVisitorIP(function(ip) {
-               // document.getElementById('visitor_ip').value = ip;
-           // });
+
 
         async function attemptLogin() {
             const user = document.getElementById('login-user').value;
@@ -207,17 +217,11 @@
 
             Swal.fire({ title: 'Authenticating...', didOpen: () => { Swal.showLoading(); } });
             console.log("habis swal loading");
-           
-                // 1. Ambil IP Publik dari API Eksternal
-                //const ipRes = await fetch('https://api.ipify.org');
-                window.clientIP ="" ;
-                
-                getVisitorIP(function(ip) {
-                //document.getElementById('visitor_ip').value = ip;  
-                     window.clientIP = ip ;
-                 });
+            const ipField = document.getElementById('ip-addr');
 
-                console.log("habis dapat ip", window.clientIP);
+            const clientIP = (ipField) ? ipField.textContent : "IP: tidak sempat diambil" ;
+
+                console.log("habis dapat ip", clientIP);
 
                 // 2. Deteksi Browser & Device Type (navigator.userAgent)
                 const ua = navigator.userAgent; // info client pakai apa lengkap
@@ -229,7 +233,7 @@
                     deviceType= "Desktop";
                     }
 
-                const deviceInfo = `${deviceType} (${ua}) - IP: ${window.clientIP}`;
+                const deviceInfo = `${deviceType} (${ua}) - IP: ${clientIP}`;
                 //console.log("habis dapat browser :", deviceInfo);
             try {
                 // 3. Kirim ke GAS
