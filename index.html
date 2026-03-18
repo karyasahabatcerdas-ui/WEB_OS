@@ -108,7 +108,21 @@
 
         .nav-item{
             color:var(--text-main);
+            background: var(--accent);
         }
+
+        .nav-item:hover{
+            background: var(--accent);
+            filter: brightness(120%)!important;
+        }
+
+        .nav-item::selection {
+           /* Mencampur warna accent dengan hitam sebanyak 30% untuk menggelapkannya */
+            background: color-mix(in srgb, var(--accent), black 30%) !important;
+            /*color: white; *//* Opsional: agar teks tetap terbaca jelas */
+        }
+
+
 
         /* TERAPKAN VARIABEL KE ELEMEN (Pastikan elemen pakai var ini) */
         .taskbar { background: var(--bg-panel); color: var(--text-main); border-top: 1px solid var(--border); }
@@ -196,16 +210,21 @@
 
 
         .menu-item { padding: 12px; 
-            cursor: pointer; display: 
-            flex; align-items: center;
-             gap: 12px; border-radius: 8px; 
+            cursor: pointer; display:flex; 
+            align-items: center;
+            gap: 12px; border-radius: 8px; 
             color: var(--text-main) !important; 
             background : var(--bg-panel) !important ;}
 
-        .menu-item :hover { 
+        .menu-item:hover { 
             background : var(--accent) !important ;
-            filter: brightness(120%);  
-            color: var(--text-main); }
+            filter: brightness(120%) !important;  
+            color: var(--text-main) !important; }
+
+        .menu-item::selection{
+             background: color-mix(in srgb, var(--accent), black 30%) !important;
+            /*color: white; *//* Opsional: agar teks tetap terbaca jelas */
+        }
 
         #ctx-desktop { position: absolute; 
             /*background: white; */
@@ -217,7 +236,19 @@
             padding: 5px; 
             min-width: 160px; }
 
+        
+        #btn-close-sys{
+            background: var(--accent);
+            border: var(--border);
+            color:var(--text-main);
+        }
 
+        #btn-save-sys{
+            background: var(--text-main);
+            border: var(--border);
+            color:var(--accent);
+
+        }
 
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
@@ -1281,8 +1312,8 @@
                     </div>
                         <!-- Tombol Save di Bawah (Sticky) -->
                         <div style="padding:15px; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
-                            <button onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
-                            <button onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; font-weight:bold; cursor:pointer;">Apply Changes</button>
+                            <button id="btn-close-sys" onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
+                            <button id="btn-save-sys" onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; font-weight:bold; cursor:pointer;">Apply Changes</button>
                         </div>
 
                     </div> <!-- End win-body -->
