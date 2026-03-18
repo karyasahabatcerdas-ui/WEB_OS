@@ -108,18 +108,18 @@
 
         .nav-item{
             color:var(--text-main);
-            background: var(--accent);
+            background: var(--bg-panel);
+            broder: var(--border);
         }
 
         .nav-item:hover{
-            background: var(--accent);
-            filter: brightness(120%)!important;
+            background: var(--border);
+            
         }
 
         .nav-item::selection {
-           /* Mencampur warna accent dengan hitam sebanyak 30% untuk menggelapkannya */
-            background: color-mix(in srgb, var(--accent), black 30%) !important;
-            /*color: white; *//* Opsional: agar teks tetap terbaca jelas */
+          background: var(--accent);
+          filter: brightness(120%)!important;
         }
 
 
