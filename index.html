@@ -237,18 +237,22 @@
             min-width: 160px; }
 
         
-        #btn-close-sys{
-            background: var(--accent);
+        #btn-close-sys,  #btn-save-sys{
+            background: var(--bg-panel);
             border: var(--border);
             color:var(--text-main);
         }
 
-        #btn-save-sys{
-            background: var(--text-main);
-            border: var(--border);
-            color:var(--accent);
-
+          #btn-close-sys,  #btn-save-sys:hover{
+            background: var(--accent);
+            color:var(--bg-panel);
         }
+
+
+
+
+
+
 
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
@@ -1312,8 +1316,8 @@
                     </div>
                         <!-- Tombol Save di Bawah (Sticky) -->
                         <div style="padding:15px; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:10px;">
-                            <button id="btn-close-sys" onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; background:none; cursor:pointer;">Cancel</button>
-                            <button id="btn-save-sys" onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; border:none; font-weight:bold; cursor:pointer;">Apply Changes</button>
+                            <button id="btn-close-sys" onclick="closeWin('win-settings')" style="padding:8px 20px; border-radius:20px; border:1px solid #ccc; cursor:pointer;">Cancel</button>
+                            <button id="btn-save-sys" onclick="saveAllSettings()" style="padding:8px 25px; border-radius:20px; font-weight:bold; cursor:pointer;">Apply Changes</button>
                         </div>
 
                     </div> <!-- End win-body -->
