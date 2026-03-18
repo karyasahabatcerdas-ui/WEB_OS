@@ -109,17 +109,18 @@
         .nav-item{
             color:var(--text-main);
             background: var(--bg-panel);
-            broder: var(--border);
+            border-color: var(--border);
         }
 
         .nav-item:hover{
-            background: var(--border);
+            background: var(--bg-panel);
+            filter:brightness(120%)
             
         }
 
         .nav-item::selection {
           background: var(--accent);
-          filter: brightness(120%)!important;
+          
         }
 
 
